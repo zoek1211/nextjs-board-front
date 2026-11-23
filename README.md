@@ -53,6 +53,7 @@ pnpm dev                     # http://localhost:3000
 - [020 .env와 NEXT_PUBLIC_API_BASE_URL 환경변수](#020-env와-next_public_api_base_url-환경변수)
 - [021 apiFetch 함수로 보일러플레이트 제거](#021-apifetch-함수로-보일러플레이트-제거)
 - [022-1 글쓰기 페이지와 링크 추가](#022-1-글쓰기-페이지와-링크-추가)
+- [022-2 글쓰기 폼과 유효성 체크](#022-2-글쓰기-폼과-유효성-체크)
 
 ---
 
@@ -966,4 +967,46 @@ apiFetch(`/api/v1/posts`)
 export default function Page() {
   return <div>글쓰기</div>;
 }
+```
+
+---
+
+## 022-2 글쓰기 폼과 유효성 체크
+
+- 변경 내용: [commit/022-2](https://github.com/zoek1211/nextjs-board-front/commit/022-2) · 전체 코드: [tree/022-2](https://github.com/zoek1211/nextjs-board-front/tree/022-2)
+- 강의: 22강 (2단계: 글쓰기 폼과 유효성 체크)
+
+### 핵심 내용
+
+- 제목(`input`), 내용(`textarea`), 저장 버튼으로 이루어진 폼을 만들고, 테일윈드로 세로 배치(`flex flex-col gap-2`)와 테두리(`border p-2 rounded`)를 줬다.
+- **`e.preventDefault()`**: 원래 폼을 제출하면 브라우저가 페이지를 이동(새로고침)한다. 페이지를 유지한 채 자바스크립트로 처리하려고 기본 동작을 막는다.
+- `e.currentTarget.elements.namedItem("title")`: `name` 속성으로 폼 안의 입력 요소를 찾는다. 반환 타입이 넓어서 `as HTMLInputElement` 로 구체적인 타입을 알려 준다.
+- **유효성 체크**: `trim()` 으로 앞뒤 공백을 지운 뒤 비어 있으면 `alert` 를 띄우고, `focus()` 로 커서를 해당 칸으로 옮긴 다음 `return` 한다 (가드 클로즈).
+- 브라우저에서 확인한 결과: 공백만 넣으면 "제목을 입력해주세요."가 뜨고 커서가 제목 칸으로 간다. `' 테스트 제목 '` 은 `'테스트 제목'` 으로 정리된다.
+
+### 코드 발췌
+
+`src/app/posts/write/page.tsx`
+
+```tsx
+const handleSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
+  e.preventDefault();                       // 새로고침(기본 제출) 막기
+
+  const form = e.currentTarget;
+  const titleInput = form.elements.namedItem("title") as HTMLInputElement;
+
+  titleInput.value = titleInput.value.trim();
+  if (titleInput.value.length === 0) {
+    alert("제목을 입력해주세요.");
+    titleInput.focus();
+    return;                                  // 가드 클로즈
+  }
+  // content 도 같은 방식으로 체크
+};
+
+<form className="flex flex-col gap-2 p-2" onSubmit={handleSubmit}>
+  <input className="border p-2 rounded" type="text" name="title" placeholder="제목" />
+  <textarea className="border p-2 rounded" name="content" placeholder="내용" />
+  <button className="border p-2 rounded" type="submit">저장</button>
+</form>
 ```
