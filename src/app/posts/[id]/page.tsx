@@ -70,9 +70,12 @@ export default function Page() {
             onClick={deletePost(post.id)} 라고 쓰면 렌더링할 때 바로 삭제가 실행돼 버린다!
             () => deletePost(post.id) 처럼 화살표 함수로 감싸서 "클릭했을 때 실행할 함수"를 넘긴다. */}
         {/* cursor-pointer : 마우스를 올리면 손가락 모양 (button 은 기본이 화살표) */}
+        {/* confirm(...) : 확인/취소 창을 띄우고, 확인이면 true, 취소면 false 를 돌려준다.
+            A && B : A 가 true 일 때만 B 를 실행한다(단락 평가). → 확인을 눌렀을 때만 삭제한다.
+            실수로 버튼을 눌러도 바로 지워지지 않게 하는 안전장치. */}
         <button
           className="p-2 rounded border cursor-pointer"
-          onClick={() => deletePost(post.id)}
+          onClick={() => confirm(`${post.id}번 글을 정말로 삭제하시겠습니까?`) && deletePost(post.id)}
         >
           삭제
         </button>

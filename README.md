@@ -59,6 +59,7 @@ pnpm dev                     # http://localhost:3000
 - [025-1 글 작성 후 상세페이지로 이동(push)](#025-1-글-작성-후-상세페이지로-이동push)
 - [025-2 router.replace로 변경](#025-2-routerreplace로-변경)
 - [026-1 글 삭제 버튼과 삭제 API 호출](#026-1-글-삭제-버튼과-삭제-api-호출)
+- [026-2 삭제 전 확인창](#026-2-삭제-전-확인창)
 
 ---
 
@@ -1197,4 +1198,30 @@ const deletePost = (id: number) => {
     수정
   </Link>
 </div>
+```
+
+---
+
+## 026-2 삭제 전 확인창
+
+- 변경 내용: [commit/026-2](https://github.com/zoek1211/nextjs-board-front/commit/026-2) · 전체 코드: [tree/026-2](https://github.com/zoek1211/nextjs-board-front/tree/026-2)
+- 강의: 26강 (2단계: 삭제 전 확인창)
+
+### 핵심 내용
+
+- 실수로 삭제 버튼을 눌러도 바로 지워지지 않게 **`confirm`** 으로 한 번 더 묻는다. 확인이면 `true`, 취소면 `false` 를 돌려준다.
+- **`A && B`** 는 A 가 참일 때만 B 를 실행한다(단락 평가). 그래서 확인을 눌렀을 때만 `deletePost` 가 실행된다.
+- 브라우저에서 확인한 결과: 취소하면 `/posts/6` 에 그대로 있고 삭제 요청도 없다. 확인하면 "6번 글이 삭제되었습니다." 후 `/posts` 로 이동한다.
+
+### 코드 발췌
+
+`src/app/posts/[id]/page.tsx`
+
+```tsx
+<button
+  className="p-2 rounded border cursor-pointer"
+  onClick={() => confirm(`${post.id}번 글을 정말로 삭제하시겠습니까?`) && deletePost(post.id)}
+>
+  삭제
+</button>
 ```
