@@ -27,6 +27,7 @@ pnpm dev                     # http://localhost:3000
 
 - [001 Next.js 프로젝트 생성](#001-nextjs-프로젝트-생성)
 - [004 레이아웃과 페이지, 메인 페이지 정리](#004-레이아웃과-페이지-메인-페이지-정리)
+- [005 글 목록 페이지(/posts) 추가](#005-글-목록-페이지posts-추가)
 
 ---
 
@@ -124,4 +125,41 @@ export const metadata: Metadata = {
 export default function Home() {
   return <div>안녕하세요.</div>;
 }
+```
+
+---
+
+## 005 글 목록 페이지(/posts) 추가
+
+- 변경 내용: [commit/005](https://github.com/zoek1211/nextjs-board-front/commit/005) · 전체 코드: [tree/005](https://github.com/zoek1211/nextjs-board-front/tree/005)
+- 강의: 5강, 페이지 컴포넌트는 함수명이 중요하진 않고 `export default` 를 붙여야 한다, GET /posts 에 글 목록 페이지
+
+### 핵심 내용
+
+- `src/app/posts/page.tsx` 파일을 만들면 `/posts` URL 이 생긴다. **폴더 = URL 경로**, `page.tsx` = 그 경로의 화면.
+- 페이지 컴포넌트는 `export default` 만 붙어 있으면 되고 함수 이름은 상관없다. 그래서 `Home` 을 `Page` 로 통일했다.
+- `.vscode/settings.json` 으로 에디터 탭 크기를 2칸으로 맞췄다.
+
+### 코드 발췌
+
+`src/app/posts/page.tsx`
+
+```tsx
+export default function Page() {
+  return (
+    <>                       {/* 프래그먼트: 최상위 엘리먼트를 하나로 묶는다 */}
+      <h1>글 목록</h1>
+      <ul>
+        <li>명언 1</li>      {/* 13강에서 API 데이터로 교체 */}
+        <li>명언 2</li>
+      </ul>
+    </>
+  );
+}
+```
+
+`.vscode/settings.json`
+
+```json
+{ "editor.tabSize": 2 }
 ```
