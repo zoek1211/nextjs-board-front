@@ -36,6 +36,7 @@ pnpm dev                     # http://localhost:3000
 - [012 메인화면 텍스트 가운데 정렬](#012-메인화면-텍스트-가운데-정렬)
 - [013-1 글 목록을 배열 데이터로 렌더링](#013-1-글-목록을-배열-데이터로-렌더링)
 - [013-2 글 목록 데이터를 상태로 만들기](#013-2-글-목록-데이터를-상태로-만들기)
+- [013-3 상태 타입을 any로 느슨하게](#013-3-상태-타입을-any로-느슨하게)
 
 ---
 
@@ -427,4 +428,24 @@ useEffect(() => {
   ]), 0);
   return () => clearTimeout(timer); // 정리 함수
 }, []); // [] → 처음 한 번만
+```
+
+---
+
+## 013-3 상태 타입을 any로 느슨하게
+
+- 변경 내용: [commit/013-3](https://github.com/zoek1211/nextjs-board-front/commit/013-3) · 전체 코드: [tree/013-3](https://github.com/zoek1211/nextjs-board-front/tree/013-3)
+- 강의: 13강 (3단계: 상태 타입을 any 로 느슨하게)
+
+### 핵심 내용
+
+- 서버에서 받을 데이터의 모양을 아직 확정하지 않았다면 `{ [key: string]: any }` 로 "아무 키, 아무 값" 객체를 받을 수 있다.
+- 하지만 `any` 를 쓰면 TypeScript 가 필드 이름 오타(`post.titel`)를 잡아 주지 못한다. 그래서 ESLint 도 `no-explicit-any` 로 경고한다. 이번 단계에서는 비교를 위해 그 줄만 경고를 끈다.
+- 013-5 에서 다시 명시적인 타입으로 바꾸면서 차이를 확인한다.
+
+### 코드 발췌
+
+```tsx
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- any 의 한계를 비교하기 위해
+const [posts, setPosts] = useState<{ [key: string]: any }[]>([]);
 ```

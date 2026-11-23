@@ -16,8 +16,11 @@ export default function Page() {
   // [2단계] 데이터를 "상태"로 만든다.
   // 일반 변수는 값이 바뀌어도 화면이 다시 그려지지 않는다. 상태(state)여야 setPosts 로 바꿨을 때 화면이 갱신된다.
   // 처음에는 빈 배열([])로 시작하고, 나중에 데이터가 도착하면 채운다.
-  // <{ id: number; title: string }[]> : 이 상태에 들어갈 값의 타입(id 와 title 을 가진 객체의 배열)
-  const [posts, setPosts] = useState<{ id: number; title: string }[]>([]);
+  // { [key: string]: any }[] : "아무 키에 아무 값이나 들어 있는 객체"의 배열.
+  //   서버가 어떤 모양의 데이터를 줄지 모를 때 일단 any 로 받아 보는 방법이다.
+  //   편하지만 post.titel 처럼 오타를 내도 TypeScript 가 잡아 주지 못한다. → 013-5 에서 명시적 타입으로 되돌린다.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- 13강: any의 한계와 다음 단계의 명시적 타입을 비교합니다.
+  const [posts, setPosts] = useState<{ [key: string]: any }[]>([]);
 
   // 빈 의존성 배열([]) → 컴포넌트가 처음 화면에 나타났을 때(마운트) 딱 한 번만 실행된다.
   useEffect(() => {
