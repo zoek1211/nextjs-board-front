@@ -49,6 +49,7 @@ pnpm dev                     # http://localhost:3000
 - [019-3 type 대신 interface로 정의해 보기](#019-3-type-대신-interface로-정의해-보기)
 - [019-4 다시 type으로 통일](#019-4-다시-type으로-통일)
 - [019-5 Omit으로 타입 중복 제거](#019-5-omit으로-타입-중복-제거)
+- [019-6 교차 타입으로 중복 제거](#019-6-교차-타입으로-중복-제거)
 
 ---
 
@@ -832,4 +833,33 @@ export type PostWithContentDto = {
 
 // content 를 뺀 { id: number; title: string }
 export type PostDto = Omit<PostWithContentDto, "content">;
+```
+
+---
+
+## 019-6 교차 타입으로 중복 제거
+
+- 변경 내용: [commit/019-6](https://github.com/zoek1211/nextjs-board-front/commit/019-6) · 전체 코드: [tree/019-6](https://github.com/zoek1211/nextjs-board-front/tree/019-6)
+- 강의: 19강 (6단계: 교차 타입(&)으로 중복 제거, 최종)
+
+### 핵심 내용
+
+- 중복을 없애는 두 번째 방법: **작은 타입에 필드를 더해서** 큰 타입을 만든다.
+- **`A & B`** (교차 타입)는 A 와 B 의 필드를 모두 가진 타입이다.
+- "기본(PostDto) + 본문(content)" 구조라서, 빼는 방식(`Omit`)보다 의도가 더 잘 읽힌다. 이 형태를 최종으로 쓴다.
+
+### 코드 발췌
+
+`src/type/post.ts`
+
+```ts
+export type PostDto = {
+  id: number;
+  title: string;
+};
+
+// PostDto + content
+export type PostWithContentDto = PostDto & {
+  content: string;
+};
 ```
