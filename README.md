@@ -44,6 +44,7 @@ pnpm dev                     # http://localhost:3000
 - [016 path 파라미터로 글 번호 가져오기](#016-path-파라미터로-글-번호-가져오기)
 - [017 목록에서 각 글에 상세 링크 걸기](#017-목록에서-각-글에-상세-링크-걸기)
 - [018 가드 클로즈 패턴 적용](#018-가드-클로즈-패턴-적용)
+- [019-1 PostDto 타입 정의](#019-1-postdto-타입-정의)
 
 ---
 
@@ -667,4 +668,40 @@ return (
     <div style={{ whiteSpace: "pre-line" }}>{post.content}</div>
   </>
 );
+```
+
+---
+
+## 019-1 PostDto 타입 정의
+
+- 변경 내용: [commit/019-1](https://github.com/zoek1211/nextjs-board-front/commit/019-1) · 전체 코드: [tree/019-1](https://github.com/zoek1211/nextjs-board-front/tree/019-1)
+- 강의: 19강, PostDto, PostWithContentDto 타입 정의 (1단계: PostDto 하나로 모으기)
+
+### 핵심 내용
+
+- 페이지마다 반복해서 쓰던 객체 타입(`{ id: number; title: string; ... }`)에 **`PostDto`** 라는 이름을 붙여 `src/type/post.ts` 에 모았다.
+- 백엔드 응답 모양이 바뀌면 이 파일 한 곳만 고치면 된다.
+- **`import type`**: 타입만 가져온다. 타입은 컴파일 후 사라지므로 브라우저로 보내는 JS 에 포함되지 않는다.
+- **`@/`**: `create-next-app` 의 `--import-alias "@/*"` 덕분에 `@/` 가 `src/` 를 가리킨다. 상대경로(`../../type/post`)를 계산할 필요가 없다.
+- 에디터의 Organize Imports 기능(4강 팁 3)으로 import 순서도 정리했다.
+
+### 코드 발췌
+
+`src/type/post.ts`
+
+```ts
+export type PostDto = {
+  id: number;
+  title: string;
+  content: string;
+};
+```
+
+`src/app/posts/page.tsx`, `src/app/posts/[id]/page.tsx`
+
+```tsx
+import type { PostDto } from "@/type/post";
+
+const [posts, setPosts] = useState<PostDto[]>([]);      // 목록
+const [post, setPost] = useState<PostDto | null>(null); // 상세
 ```

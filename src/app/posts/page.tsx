@@ -7,6 +7,9 @@
 //                       그래서 상태(useState), 이벤트(onClick) 처럼 사용자와 상호작용하는 기능을 쓸 수 있다.
 // 이 강의에서는 리액트 기본기(useState, useEffect)를 그대로 쓰기 위해 페이지를 클라이언트 컴포넌트로 만든다.
 
+// import type : 타입만 가져온다. 타입은 컴파일 후 사라지므로 실행 코드(번들)에 포함되지 않는다.
+// "@/..." : tsconfig 의 import alias. "@/" 는 src/ 를 뜻한다. (../../type/post 처럼 상대경로를 계산할 필요가 없다)
+import type { PostDto } from "@/type/post";
 // Link : 페이지 이동 컴포넌트 (a 보다 빠른 클라이언트 사이드 이동, 7강)
 import Link from "next/link";
 // useState : 상태 변수를 만든다. 상태가 바뀌면 리액트가 이 컴포넌트 함수를 다시 실행해서 화면을 갱신한다.
@@ -18,9 +21,9 @@ export default function Page() {
   // [2단계] 데이터를 "상태"로 만든다.
   // 일반 변수는 값이 바뀌어도 화면이 다시 그려지지 않는다. 상태(state)여야 setPosts 로 바꿨을 때 화면이 갱신된다.
   // 처음에는 빈 배열([])로 시작하고, 나중에 데이터가 도착하면 채운다.
-  // [5단계] any 대신 다시 명시적인 타입으로. 백엔드가 주는 글에서 우리가 쓰는 필드는 id 와 title 이다.
-  // 이제 post.titel 같은 오타를 TypeScript 가 바로 잡아 준다.
-  const [posts, setPosts] = useState<{ id: number; title: string }[]>([]);
+  // 상태의 타입: PostDto 의 배열. (src/type/post.ts 에 정의한 타입을 재사용)
+  // 명시적인 타입 덕분에 post.titel 같은 오타를 TypeScript 가 바로 잡아 준다.
+  const [posts, setPosts] = useState<PostDto[]>([]);
 
   // 빈 의존성 배열([]) → 컴포넌트가 처음 화면에 나타났을 때(마운트) 딱 한 번만 실행된다.
   useEffect(() => {
