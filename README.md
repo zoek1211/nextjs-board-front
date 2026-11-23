@@ -38,6 +38,7 @@ pnpm dev                     # http://localhost:3000
 - [013-2 글 목록 데이터를 상태로 만들기](#013-2-글-목록-데이터를-상태로-만들기)
 - [013-3 상태 타입을 any로 느슨하게](#013-3-상태-타입을-any로-느슨하게)
 - [013-4 백엔드 글 다건조회 API fetch](#013-4-백엔드-글-다건조회-api-fetch)
+- [013-5 명시적 타입으로 되돌리고 코드 다듬기](#013-5-명시적-타입으로-되돌리고-코드-다듬기)
 
 ---
 
@@ -477,4 +478,28 @@ useEffect(() => {
 }, []);
 
 {posts.length == 0 && <div>로딩중...</div>}
+```
+
+---
+
+## 013-5 명시적 타입으로 되돌리고 코드 다듬기
+
+- 변경 내용: [commit/013-5](https://github.com/zoek1211/nextjs-board-front/commit/013-5) · 전체 코드: [tree/013-5](https://github.com/zoek1211/nextjs-board-front/tree/013-5)
+- 강의: 13강 (5단계: 명시적 타입으로 되돌리고 코드 다듬기)
+
+### 핵심 내용
+
+- `any` 를 지우고 `{ id: number; title: string }[]` 로 타입을 명시한다. 이제 필드 이름 오타를 TypeScript 가 컴파일 단계에서 잡아 준다.
+- `.then((data) => setPosts(data))` 는 `.then(setPosts)` 로 줄일 수 있다. 받은 값을 그대로 넘기기만 하는 화살표 함수는 함수 자체를 넘기는 것과 같기 때문이다.
+
+### 코드 발췌
+
+```tsx
+const [posts, setPosts] = useState<{ id: number; title: string }[]>([]);
+
+useEffect(() => {
+  fetch("http://localhost:8080/api/v1/posts")
+    .then((res) => res.json())
+    .then(setPosts); // == .then((data) => setPosts(data))
+}, []);
 ```

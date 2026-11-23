@@ -16,11 +16,9 @@ export default function Page() {
   // [2단계] 데이터를 "상태"로 만든다.
   // 일반 변수는 값이 바뀌어도 화면이 다시 그려지지 않는다. 상태(state)여야 setPosts 로 바꿨을 때 화면이 갱신된다.
   // 처음에는 빈 배열([])로 시작하고, 나중에 데이터가 도착하면 채운다.
-  // { [key: string]: any }[] : "아무 키에 아무 값이나 들어 있는 객체"의 배열.
-  //   서버가 어떤 모양의 데이터를 줄지 모를 때 일단 any 로 받아 보는 방법이다.
-  //   편하지만 post.titel 처럼 오타를 내도 TypeScript 가 잡아 주지 못한다. → 013-5 에서 명시적 타입으로 되돌린다.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- 13강: any의 한계와 다음 단계의 명시적 타입을 비교합니다.
-  const [posts, setPosts] = useState<{ [key: string]: any }[]>([]);
+  // [5단계] any 대신 다시 명시적인 타입으로. 백엔드가 주는 글에서 우리가 쓰는 필드는 id 와 title 이다.
+  // 이제 post.titel 같은 오타를 TypeScript 가 바로 잡아 준다.
+  const [posts, setPosts] = useState<{ id: number; title: string }[]>([]);
 
   // 빈 의존성 배열([]) → 컴포넌트가 처음 화면에 나타났을 때(마운트) 딱 한 번만 실행된다.
   useEffect(() => {
@@ -32,7 +30,9 @@ export default function Page() {
     // 브라우저(localhost:3000)가 다른 출처(localhost:8080)를 호출하는 것이라, 백엔드에 CORS 허용 설정이 있어야 한다.
     fetch("http://localhost:8080/api/v1/posts")
       .then((res) => res.json())
-      .then((data) => setPosts(data));
+      // .then((data) => setPosts(data)) 와 같다.
+      // 받은 값을 그대로 다른 함수에 넘기기만 할 때는 함수 자체(setPosts)를 넘기면 더 짧다.
+      .then(setPosts);
   }, []);
 
   return (
