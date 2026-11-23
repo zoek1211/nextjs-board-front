@@ -43,7 +43,27 @@ export default function Page() {
       return;
     }
 
-    // 여기까지 왔다면 제목과 내용이 모두 채워져 있다. (실제 저장은 23강에서)
+    // 여기까지 왔다면 제목과 내용이 모두 채워져 있다. → 글 작성 API 호출
+    // GET 이 아닌 요청은 fetch 의 두 번째 인자(옵션)로 method, headers, body 를 넘긴다.
+    fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/posts`, {
+      method: "POST", // 글 작성 = POST /api/v1/posts
+      headers: {
+        // "보내는 본문이 JSON 이다"라고 서버에 알린다. 이게 없으면 스프링이 본문을 JSON 으로 읽지 못한다.
+        "Content-Type": "application/json; charset=utf-8",
+      },
+      // 본문은 문자열이어야 하므로 자바스크립트 객체를 JSON 문자열로 바꾼다.
+      // {"title":"...","content":"..."} → 백엔드의 요청 DTO(title, content)와 필드 이름을 맞춘다.
+      body: JSON.stringify({
+        title: titleInput.value,
+        content: contentTextarea.value,
+      }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        // 백엔드는 { resultCode, msg, data } 모양(RsData)으로 응답한다.
+        // msg : "1번 글이 작성되었습니다." 같은 결과 메시지
+        alert(data.msg);
+      });
   };
 
   return (

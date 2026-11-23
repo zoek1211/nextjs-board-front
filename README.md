@@ -54,6 +54,7 @@ pnpm dev                     # http://localhost:3000
 - [021 apiFetch 함수로 보일러플레이트 제거](#021-apifetch-함수로-보일러플레이트-제거)
 - [022-1 글쓰기 페이지와 링크 추가](#022-1-글쓰기-페이지와-링크-추가)
 - [022-2 글쓰기 폼과 유효성 체크](#022-2-글쓰기-폼과-유효성-체크)
+- [023 글 작성 API 호출](#023-글-작성-api-호출)
 
 ---
 
@@ -1009,4 +1010,42 @@ const handleSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
   <textarea className="border p-2 rounded" name="content" placeholder="내용" />
   <button className="border p-2 rounded" type="submit">저장</button>
 </form>
+```
+
+---
+
+## 023 글 작성 API 호출
+
+- 변경 내용: [commit/023](https://github.com/zoek1211/nextjs-board-front/commit/023) · 전체 코드: [tree/023](https://github.com/zoek1211/nextjs-board-front/tree/023)
+- 강의: 23강, 글 작성 API 호출하여 정말로 글이 작성되도록
+
+### 핵심 내용
+
+- 유효성 체크를 통과하면 글 작성 API(`POST /api/v1/posts`)를 호출한다.
+- GET 이 아닌 요청은 `fetch` 의 두 번째 인자(옵션)에 `method`, `headers`, `body` 를 넣는다.
+  - `method: "POST"`
+  - `"Content-Type": "application/json; charset=utf-8"`: 본문이 JSON 이라고 알려야 스프링이 요청 DTO 로 읽을 수 있다.
+  - `body: JSON.stringify({ title, content })`: 본문은 문자열이어야 하므로 객체를 JSON 문자열로 바꾼다.
+- 백엔드는 `{ resultCode, msg, data }` 모양(RsData)으로 응답한다. `msg` 를 `alert` 로 보여 준다.
+- 브라우저에서 확인한 결과: 다른 출처로 보내는 JSON POST 라서 브라우저가 먼저 `OPTIONS` (CORS preflight)를 보낸다. 응답은 200, 이어서 `POST` 는 201이고 "4번 글이 작성되었습니다."가 뜬다.
+
+### 코드 발췌
+
+`src/app/posts/write/page.tsx`
+
+```tsx
+fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/posts`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json; charset=utf-8",
+  },
+  body: JSON.stringify({
+    title: titleInput.value,
+    content: contentTextarea.value,
+  }),
+})
+  .then((response) => response.json())
+  .then((data) => {
+    alert(data.msg);   // "4번 글이 작성되었습니다."
+  });
 ```
