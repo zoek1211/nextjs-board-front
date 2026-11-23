@@ -3,7 +3,7 @@
 // apiFetch : 백엔드 주소 붙이기 + fetch + JSON 변환을 한 번에 해 주는 공용 함수 (src/lib/backend/client.ts)
 import { apiFetch } from "@/lib/backend/client";
 // 글 타입 (src/type/post.ts). import type 은 타입만 가져와서 실행 코드에는 포함되지 않는다.
-import type { PostWithContentDto } from "@/type/post";
+import type { PostCommentDto, PostWithContentDto } from "@/type/post";
 import Link from "next/link";
 // useParams : 현재 URL 의 동적 세그먼트 값(path 파라미터)을 꺼내는 Next.js 훅
 // useRouter : 코드로 페이지를 이동시키는 Next.js 훅
@@ -25,6 +25,10 @@ export default function Page() {
   // 글 하나는 객체 하나. 아직 받아오기 전에는 "없음"을 뜻하는 null 로 시작한다.
   // 상세페이지는 본문까지 필요하므로 PostWithContentDto 를 쓴다. 타입 = PostWithContentDto | null
   const [post, setPost] = useState<PostWithContentDto | null>(null);
+  // 댓글 목록 상태. 초기값이 null 이다. (왜 [] 가 아니라 null 인지는 31강에서)
+  //   null : 아직 불러오는 중
+  //   []   : 다 불러왔는데 댓글이 0개
+  const [postComments, setPostComments] = useState<PostCommentDto[] | null>(null);
 
   // 글 삭제: DELETE /api/v1/posts/{id}
   // 본문(body)이 없는 요청이므로 method 만 넘긴다. (apiFetch 는 body 가 없으면 Content-Type 을 붙이지 않는다)
@@ -45,6 +49,11 @@ export default function Page() {
     // 백틱(`) 템플릿 리터럴로 URL 에 id 를 끼워 넣는다.
     apiFetch(`/api/v1/posts/${id}`)
       .then(setPost);
+
+    // 댓글 다건조회 API: GET /api/v1/posts/{id}/comments
+    // 글 조회와 댓글 조회는 서로 기다릴 필요가 없으므로 동시에 요청한다. (먼저 도착한 쪽부터 화면에 반영)
+    apiFetch(`/api/v1/posts/${id}/comments`)
+      .then(setPostComments);
     // 의존성 배열에 id 를 넣었다. → id 가 바뀌면(다른 글로 이동하면) 이 effect 가 다시 실행되어 새 글을 불러온다.
   }, [id]);
 
@@ -84,6 +93,29 @@ export default function Page() {
           수정
         </Link>
       </div>
+
+      {/* hr : 구분선, my-2 : 위아래 바깥 여백 */}
+      <hr className="my-2" />
+
+      <h2>댓글 목록</h2>
+
+      {/* 상태가 3가지라서 3갈래로 나눠 그린다. */}
+      {/* 1) null → 아직 불러오는 중 */}
+      {postComments == null && <div>댓글 로딩중...</div>}
+
+      {/* 2) 빈 배열 → 불러왔지만 댓글이 없음 */}
+      {postComments != null && postComments.length == 0 && (
+        <div>댓글이 없습니다.</div>
+      )}
+
+      {/* 3) 원소가 있는 배열 → 목록 출력 */}
+      {postComments != null && postComments.length > 0 && (
+        <ul>
+          {postComments.map((comment) => (
+            <li key={comment.id}>{comment.content}</li>
+          ))}
+        </ul>
+      )}
     </>
   );
 }

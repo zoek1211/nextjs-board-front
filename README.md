@@ -64,6 +64,7 @@ pnpm dev                     # http://localhost:3000
 - [028-1 글 수정 페이지 추가](#028-1-글-수정-페이지-추가)
 - [028-2 기존 글을 불러와 수정 폼에 채우기](#028-2-기존-글을-불러와-수정-폼에-채우기)
 - [029 글 수정 API 호출](#029-글-수정-api-호출)
+- [030 댓글 다건조회](#030-댓글-다건조회)
 
 ---
 
@@ -1373,4 +1374,58 @@ const handleSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
 };
 
 <form className="flex flex-col gap-2 p-2" onSubmit={handleSubmit}>
+```
+
+---
+
+## 030 댓글 다건조회
+
+- 변경 내용: [commit/030](https://github.com/zoek1211/nextjs-board-front/commit/030) · 전체 코드: [tree/030](https://github.com/zoek1211/nextjs-board-front/tree/030)
+- 강의: 30강, 댓글 다건조회
+
+### 핵심 내용
+
+- 백엔드가 실제로 내려주는 필드에 맞춰 타입을 보강했다. `PostDto` 에 `createDate`, `modifyDate` 를 추가하고, 댓글 타입 **`PostCommentDto`** 를 새로 정의했다. 날짜는 JSON 에서 문자열로 온다.
+- 상세페이지에서 글 조회와 함께 **댓글 다건조회 API(`GET /api/v1/posts/{id}/comments`)** 도 호출한다. 두 요청은 서로 기다릴 필요가 없어서 동시에 보낸다.
+- 댓글 상태의 초기값은 `null` 이고, 화면을 **세 갈래**로 그린다.
+  1. `null` → "댓글 로딩중..."
+  2. 빈 배열 → "댓글이 없습니다."
+  3. 원소가 있는 배열 → 목록
+- 브라우저에서 확인한 결과: 1번 글은 댓글 1-1 ~ 1-3 이 보이고, 8번 글(새로 쓴 글)은 "댓글이 없습니다."가 보인다.
+
+### 코드 발췌
+
+`src/type/post.ts`
+
+```ts
+export type PostCommentDto = {
+  id: number;
+  createDate: string;
+  modifyDate: string;
+  content: string;
+};
+```
+
+`src/app/posts/[id]/page.tsx`
+
+```tsx
+const [postComments, setPostComments] = useState<PostCommentDto[] | null>(null);
+
+useEffect(() => {
+  apiFetch(`/api/v1/posts/${id}`).then(setPost);
+  apiFetch(`/api/v1/posts/${id}/comments`).then(setPostComments);
+}, [id]);
+
+<hr className="my-2" />
+<h2>댓글 목록</h2>
+
+{postComments == null && <div>댓글 로딩중...</div>}
+{postComments != null && postComments.length == 0 && <div>댓글이 없습니다.</div>}
+{postComments != null && postComments.length > 0 && (
+  <ul>
+    {postComments.map((comment) => (
+      <li key={comment.id}>{comment.content}</li>
+    ))}
+  </ul>
+)}
 ```
