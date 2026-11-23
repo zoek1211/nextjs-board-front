@@ -29,9 +29,29 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="ko" // 한국어 사이트임을 브라우저/검색엔진/스크린리더에 알려준다
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      {/* flex flex-col : body 의 자식(header, main, footer)을 위에서 아래로 쌓는다 */}
+      <body className="flex flex-col">
+        {/* 사이트 공통 상단바. 레이아웃에 있으므로 모든 페이지에 똑같이 보인다. */}
+        <header>
+          {/* flex : 메뉴(a)들을 가로로 나란히 배치 */}
+          <nav className="flex">
+            {/* p-2 : 안쪽 여백, rounded : 모서리 둥글게, hover:bg-gray-100 : 마우스를 올리면 회색 배경 */}
+            {/* a 태그는 클릭할 때마다 페이지 전체를 새로 받아온다(새로고침). 7강에서 Link 와 비교한다. */}
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- 6강: 전체 페이지 이동을 다음 강의의 Link와 비교합니다. */}
+            <a href="/" className="p-2 rounded hover:bg-gray-100">
+              메인
+            </a>
+            <a href="/posts" className="p-2 rounded hover:bg-gray-100">
+              글 목록
+            </a>
+          </nav>
+        </header>
+        {/* 페이지마다 바뀌는 본문. 현재 URL 의 page.tsx 가 여기에 들어간다. */}
+        <main>{children}</main>
+        <footer>푸터</footer>
+      </body>
     </html>
   );
 }

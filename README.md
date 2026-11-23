@@ -28,6 +28,7 @@ pnpm dev                     # http://localhost:3000
 - [001 Next.js 프로젝트 생성](#001-nextjs-프로젝트-생성)
 - [004 레이아웃과 페이지, 메인 페이지 정리](#004-레이아웃과-페이지-메인-페이지-정리)
 - [005 글 목록 페이지(/posts) 추가](#005-글-목록-페이지posts-추가)
+- [006 사이트 공통 상단바 구현](#006-사이트-공통-상단바-구현)
 
 ---
 
@@ -162,4 +163,36 @@ export default function Page() {
 
 ```json
 { "editor.tabSize": 2 }
+```
+
+---
+
+## 006 사이트 공통 상단바 구현
+
+- 변경 내용: [commit/006](https://github.com/zoek1211/nextjs-board-front/commit/006) · 전체 코드: [tree/006](https://github.com/zoek1211/nextjs-board-front/tree/006)
+- 강의: 6강, 사이트 공통 상단바 구현
+
+### 핵심 내용
+
+- 모든 페이지에 공통으로 보여야 하는 상단바(`header`)와 푸터(`footer`)는 **레이아웃**에 둔다. 페이지마다 복사할 필요가 없다.
+- `body` 를 `header` / `main` / `footer` 세 구역으로 나누고, 페이지 내용(`children`)은 `main` 안에 넣는다.
+- 테일윈드 클래스로 스타일을 준다: `flex` (가로 배치), `p-2` (안쪽 여백), `rounded` (둥근 모서리), `hover:bg-gray-100` (마우스를 올렸을 때 배경색).
+- 아직은 `<a>` 태그로 이동한다. 클릭할 때마다 페이지 전체를 새로 불러온다. ESLint 가 이 점을 경고하므로 이번 강의에서만 `eslint-disable-next-line` 으로 끈다.
+
+### 코드 발췌
+
+`src/app/layout.tsx`
+
+```tsx
+<body className="flex flex-col">
+  <header>
+    <nav className="flex">
+      {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- 7강에서 Link 와 비교 */}
+      <a href="/" className="p-2 rounded hover:bg-gray-100">메인</a>
+      <a href="/posts" className="p-2 rounded hover:bg-gray-100">글 목록</a>
+    </nav>
+  </header>
+  <main>{children}</main>   {/* 페이지마다 바뀌는 부분 */}
+  <footer>푸터</footer>
+</body>
 ```
