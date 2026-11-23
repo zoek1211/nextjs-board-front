@@ -1,24 +1,44 @@
-"use client"; // 상태(useState)와 useEffect 를 쓰기 위해 클라이언트 컴포넌트로
+"use client"; // 상태(useState)와 useEffect, onClick 을 쓰기 위해 클라이언트 컴포넌트로
 
-// 글 타입 (src/type/post.ts). import type 은 타입만 가져와서 실행 코드에는 포함되지 않는다.
 // apiFetch : 백엔드 주소 붙이기 + fetch + JSON 변환을 한 번에 해 주는 공용 함수 (src/lib/backend/client.ts)
 import { apiFetch } from "@/lib/backend/client";
+// 글 타입 (src/type/post.ts). import type 은 타입만 가져와서 실행 코드에는 포함되지 않는다.
 import type { PostWithContentDto } from "@/type/post";
+import Link from "next/link";
 // useParams : 현재 URL 의 동적 세그먼트 값(path 파라미터)을 꺼내는 Next.js 훅
-import { useParams } from "next/navigation";
+// useRouter : 코드로 페이지를 이동시키는 Next.js 훅
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-
 
 // src/app/posts/[id]/page.tsx == "/posts/1", "/posts/2" ... 주소(글 상세페이지)
 // 폴더 이름을 [id] 처럼 대괄호로 감싸면 "동적 세그먼트"가 된다. /posts/ 뒤에 오는 어떤 값이든 이 페이지가 처리한다.
 export default function Page() {
+  const router = useRouter();
+
   // /posts/3 으로 접속하면 { id: "3" } 을 돌려준다. 폴더 이름 [id] 가 키 이름이 된다.
   // URL 은 문자열이므로 path 파라미터 값의 타입은 항상 string 이다.
-  const { id } = useParams<{ id: string }>();
+  // { id: idStr } : 구조분해할당하면서 이름을 idStr 로 바꿔 받는다. (문자열이라는 것을 이름으로 표시)
+  const { id: idStr } = useParams<{ id: string }>();
+  // 글 번호는 숫자로 다루는 것이 자연스러우므로 Number() 로 변환한다. "3" → 3
+  const id = Number(idStr);
 
   // 글 하나는 객체 하나. 아직 받아오기 전에는 "없음"을 뜻하는 null 로 시작한다.
   // 상세페이지는 본문까지 필요하므로 PostWithContentDto 를 쓴다. 타입 = PostWithContentDto | null
   const [post, setPost] = useState<PostWithContentDto | null>(null);
+
+  // 글 삭제: DELETE /api/v1/posts/{id}
+  // 본문(body)이 없는 요청이므로 method 만 넘긴다. (apiFetch 는 body 가 없으면 Content-Type 을 붙이지 않는다)
+  const deletePost = (id: number) => {
+    apiFetch(`/api/v1/posts/${id}`, {
+      method: "DELETE",
+    }).then((data) => {
+      alert(data.msg); // "1번 글이 삭제되었습니다."
+
+      // 삭제된 글의 상세페이지는 더 이상 의미가 없으므로 목록으로 이동한다.
+      // replace : 방문 기록에서 지금 페이지를 교체 → 뒤로가기로 삭제된 글 페이지에 다시 오지 않는다.
+      router.replace("/posts");
+    });
+  };
 
   useEffect(() => {
     // 글 단건조회 API: GET /api/v1/posts/{id}
@@ -43,6 +63,24 @@ export default function Page() {
       {/* whiteSpace: "pre-line" : 본문의 줄바꿈(\n)을 화면에서도 줄바꿈으로 보여 준다.
           JSX 의 style 은 객체로 쓰고, CSS 속성 이름은 camelCase(white-space → whiteSpace)로 쓴다. */}
       <div style={{ whiteSpace: "pre-line" }}>{post.content}</div>
+
+      {/* 삭제/수정 버튼. flex gap-2 : 가로로 나란히, 사이 간격 */}
+      <div className="flex gap-2">
+        {/* onClick 에는 "함수"를 넘겨야 한다.
+            onClick={deletePost(post.id)} 라고 쓰면 렌더링할 때 바로 삭제가 실행돼 버린다!
+            () => deletePost(post.id) 처럼 화살표 함수로 감싸서 "클릭했을 때 실행할 함수"를 넘긴다. */}
+        {/* cursor-pointer : 마우스를 올리면 손가락 모양 (button 은 기본이 화살표) */}
+        <button
+          className="p-2 rounded border cursor-pointer"
+          onClick={() => deletePost(post.id)}
+        >
+          삭제
+        </button>
+        {/* 수정 페이지(/posts/글번호/edit)로 이동. 수정 페이지는 28강에서 만든다. */}
+        <Link className="p-2 rounded border" href={`/posts/${post.id}/edit`}>
+          수정
+        </Link>
+      </div>
     </>
   );
 }

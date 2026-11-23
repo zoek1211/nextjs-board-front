@@ -58,6 +58,7 @@ pnpm dev                     # http://localhost:3000
 - [024 apiFetch 확장(POST 지원)](#024-apifetch-확장post-지원)
 - [025-1 글 작성 후 상세페이지로 이동(push)](#025-1-글-작성-후-상세페이지로-이동push)
 - [025-2 router.replace로 변경](#025-2-routerreplace로-변경)
+- [026-1 글 삭제 버튼과 삭제 API 호출](#026-1-글-삭제-버튼과-삭제-api-호출)
 
 ---
 
@@ -1154,4 +1155,46 @@ const router = useRouter();
   alert(data.msg);
   router.replace(`/posts/${data.data.id}`);   // 글쓰기 페이지를 기록에서 교체
 });
+```
+
+---
+
+## 026-1 글 삭제 버튼과 삭제 API 호출
+
+- 변경 내용: [commit/026-1](https://github.com/zoek1211/nextjs-board-front/commit/026-1) · 전체 코드: [tree/026-1](https://github.com/zoek1211/nextjs-board-front/tree/026-1)
+- 강의: 26강, 글 삭제 (1단계: 삭제 버튼과 삭제 API 호출)
+
+### 핵심 내용
+
+- 상세페이지에 **삭제 버튼**과 **수정 링크**(`/posts/글번호/edit`, 28강에서 구현)를 추가했다.
+- `deletePost` 는 `DELETE /api/v1/posts/{id}` 를 호출한다. 본문이 없으니 `method` 만 넘긴다. 결과 메시지를 `alert` 로 보여 준 뒤 `router.replace("/posts")` 로 목록으로 간다. 삭제된 글 페이지는 뒤로가기로 돌아오지 않게 기록에서 교체한다.
+- path 파라미터를 `{ id: idStr }` 로 이름을 바꿔 받고 `Number(idStr)` 로 숫자로 바꿨다. 글 번호를 숫자로 다루기 위해서다.
+- **`onClick={() => deletePost(post.id)}`**: `onClick` 에는 함수를 넘겨야 한다. `onClick={deletePost(post.id)}` 라고 쓰면 렌더링하는 순간 삭제가 실행돼 버린다.
+- 브라우저에서 확인한 결과: 7번 글 삭제 → "7번 글이 삭제되었습니다." → `/posts` 로 이동하고 목록에서 사라졌다.
+
+### 코드 발췌
+
+`src/app/posts/[id]/page.tsx`
+
+```tsx
+const { id: idStr } = useParams<{ id: string }>();
+const id = Number(idStr);
+
+const deletePost = (id: number) => {
+  apiFetch(`/api/v1/posts/${id}`, {
+    method: "DELETE",
+  }).then((data) => {
+    alert(data.msg);
+    router.replace("/posts");
+  });
+};
+
+<div className="flex gap-2">
+  <button className="p-2 rounded border cursor-pointer" onClick={() => deletePost(post.id)}>
+    삭제
+  </button>
+  <Link className="p-2 rounded border" href={`/posts/${post.id}/edit`}>
+    수정
+  </Link>
+</div>
 ```
