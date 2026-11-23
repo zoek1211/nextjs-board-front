@@ -51,6 +51,7 @@ pnpm dev                     # http://localhost:3000
 - [019-5 Omit으로 타입 중복 제거](#019-5-omit으로-타입-중복-제거)
 - [019-6 교차 타입으로 중복 제거](#019-6-교차-타입으로-중복-제거)
 - [020 .env와 NEXT_PUBLIC_API_BASE_URL 환경변수](#020-env와-next_public_api_base_url-환경변수)
+- [021 apiFetch 함수로 보일러플레이트 제거](#021-apifetch-함수로-보일러플레이트-제거)
 
 ---
 
@@ -894,4 +895,44 @@ NEXT_PUBLIC_FRONTEND_BASE_URL=http://localhost:3000
 const NEXT_PUBLIC_API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 fetch(`${NEXT_PUBLIC_API_BASE_URL}/api/v1/posts`)
+```
+
+---
+
+## 021 apiFetch 함수로 보일러플레이트 제거
+
+- 변경 내용: [commit/021](https://github.com/zoek1211/nextjs-board-front/commit/021) · 전체 코드: [tree/021](https://github.com/zoek1211/nextjs-board-front/tree/021)
+- 강의: 21강, apiFetch 함수 추가, api 호출에 관련된 보일러플레이트를 제거
+
+### 핵심 내용
+
+- 페이지마다 반복되던 **보일러플레이트**(백엔드 주소 붙이기 + `fetch` + `res.json()`)를 `src/lib/backend/client.ts` 의 **`apiFetch`** 함수 하나로 모았다.
+- 페이지는 이제 경로만 넘긴다: `apiFetch("/api/v1/posts")`.
+- 환경변수 읽기도 `client.ts` 한 곳으로 옮겼다. 페이지에서는 백엔드 주소를 전혀 신경 쓰지 않는다.
+- 나중에 공통 헤더나 에러 처리가 필요해지면 `apiFetch` 만 고치면 된다. (24강, 27강에서 확장)
+
+### 코드 발췌
+
+`src/lib/backend/client.ts`
+
+```ts
+const NEXT_PUBLIC_API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+export const apiFetch = (url: string) => {
+  return fetch(`${NEXT_PUBLIC_API_BASE_URL}${url}`)
+    .then((res) => res.json());
+};
+```
+
+`src/app/posts/page.tsx` (변경 전 → 후)
+
+```tsx
+// 전
+fetch(`${NEXT_PUBLIC_API_BASE_URL}/api/v1/posts`)
+  .then((res) => res.json())
+  .then(setPosts);
+
+// 후
+apiFetch(`/api/v1/posts`)
+  .then(setPosts);
 ```
