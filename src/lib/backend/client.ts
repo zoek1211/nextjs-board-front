@@ -11,15 +11,25 @@ const NEXT_PUBLIC_API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 //   RequestInit 은 fetch 의 두 번째 인자(method, headers, body ...)의 타입이다.
 //   ? 는 "생략 가능"이라는 뜻. GET 요청은 options 없이 호출하면 된다.
 export const apiFetch = (url: string, options?: RequestInit) => {
-  // 본문(body)이 있는 요청이라면 우리 백엔드에는 항상 JSON 을 보낸다.
-  // 그래서 Content-Type 헤더를 여기서 자동으로 붙여 준다. → 페이지에서는 headers 를 쓸 필요가 없어진다.
-  // options?.body : options 가 undefined 면 에러 대신 undefined (옵셔널 체이닝)
+  // 본문(body)이 있는 요청이라면 우리 백엔드에는 기본적으로 JSON 을 보낸다.
   if (options?.body) {
-    options.headers = {
-      // ...options.headers : 호출한 쪽에서 넘긴 헤더가 있다면 그대로 펼쳐서 유지 (스프레드 문법)
-      ...options.headers,
-      "Content-Type": "application/json; charset=utf-8",
-    };
+    // 왜 Headers 클래스를 쓰나? (24강 방식: { ...options.headers, "Content-Type": ... } 의 문제점)
+    //   RequestInit 의 headers 는 세 가지 모양이 모두 가능하다.
+    //     1) 일반 객체   { "X-A": "1" }
+    //     2) 배열        [["X-A", "1"]]
+    //     3) Headers 객체 new Headers(...)
+    //   객체 스프레드(...)는 1번일 때만 제대로 동작하고, 2·3번이면 헤더가 사라지거나 엉뚱하게 펼쳐진다.
+    //   new Headers(...) 는 세 모양을 모두 받아서 하나의 Headers 객체로 정리해 준다.
+    // options?.headers || {} : headers 가 없으면 빈 객체로 시작
+    const headers = new Headers(options?.headers || {});
+
+    // 호출한 쪽에서 이미 Content-Type 을 정했다면(예: 파일 업로드) 덮어쓰지 않는다.
+    // has / set 은 헤더 이름의 대소문자를 구분하지 않는다. ("content-type" 도 같은 헤더로 본다)
+    if (!headers.has("Content-Type")) {
+      headers.set("Content-Type", "application/json; charset=utf-8");
+    }
+
+    options.headers = headers;
   }
 
   return fetch(`${NEXT_PUBLIC_API_BASE_URL}${url}`, options).then((res) =>

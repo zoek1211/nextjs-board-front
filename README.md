@@ -60,6 +60,7 @@ pnpm dev                     # http://localhost:3000
 - [025-2 router.replace로 변경](#025-2-routerreplace로-변경)
 - [026-1 글 삭제 버튼과 삭제 API 호출](#026-1-글-삭제-버튼과-삭제-api-호출)
 - [026-2 삭제 전 확인창](#026-2-삭제-전-확인창)
+- [027 apiFetch에 Headers 클래스 도입](#027-apifetch에-headers-클래스-도입)
 
 ---
 
@@ -1224,4 +1225,41 @@ const deletePost = (id: number) => {
 >
   삭제
 </button>
+```
+
+---
+
+## 027 apiFetch에 Headers 클래스 도입
+
+- 변경 내용: [commit/027](https://github.com/zoek1211/nextjs-board-front/commit/027) · 전체 코드: [tree/027](https://github.com/zoek1211/nextjs-board-front/tree/027)
+- 강의: 27강, apiFetch에 Headers 클래스 도입하여 안정성 높힘
+
+### 핵심 내용
+
+- `RequestInit.headers` 는 **일반 객체, `[이름, 값]` 배열, `Headers` 객체** 세 가지 모양이 모두 가능하다.
+- 24강의 `{ ...options.headers, ... }` 스프레드는 일반 객체일 때만 제대로 동작한다. 배열이나 `Headers` 객체가 들어오면 기존 헤더가 사라지거나 엉뚱하게 펼쳐진다.
+- **`new Headers(options?.headers || {})`** 는 세 모양을 모두 받아서 하나로 정리해 준다.
+- `headers.has("Content-Type")` 으로 호출한 쪽이 이미 Content-Type 을 정했는지 확인하고, 없을 때만 JSON 으로 설정한다(덮어쓰기 방지). 헤더 이름은 대소문자를 구분하지 않는다.
+- 브라우저에서 확인한 결과: 글 작성(POST)이 그대로 동작한다. "8번 글이 작성되었습니다." 후 `/posts/8` 로 이동한다.
+
+### 코드 발췌
+
+`src/lib/backend/client.ts`
+
+```ts
+export const apiFetch = (url: string, options?: RequestInit) => {
+  if (options?.body) {
+    const headers = new Headers(options?.headers || {});
+
+    if (!headers.has("Content-Type")) {
+      headers.set("Content-Type", "application/json; charset=utf-8");
+    }
+
+    options.headers = headers;
+  }
+
+  return fetch(`${NEXT_PUBLIC_API_BASE_URL}${url}`, options).then((res) =>
+    res.json()
+  );
+};
 ```
