@@ -1,11 +1,16 @@
 "use client"; // 상태(useState)와 useEffect 를 쓰기 위해 클라이언트 컴포넌트로
 
 import { useEffect, useState } from "react";
+// useParams : 현재 URL 의 동적 세그먼트 값(path 파라미터)을 꺼내는 Next.js 훅
+import { useParams } from "next/navigation";
 
 // src/app/posts/[id]/page.tsx == "/posts/1", "/posts/2" ... 주소(글 상세페이지)
 // 폴더 이름을 [id] 처럼 대괄호로 감싸면 "동적 세그먼트"가 된다. /posts/ 뒤에 오는 어떤 값이든 이 페이지가 처리한다.
-// 단, 이번 단계에서는 URL 과 상관없이 무조건 1번 글을 보여 준다. (16강에서 URL 의 id 를 사용)
 export default function Page() {
+  // /posts/3 으로 접속하면 { id: "3" } 을 돌려준다. 폴더 이름 [id] 가 키 이름이 된다.
+  // URL 은 문자열이므로 path 파라미터 값의 타입은 항상 string 이다.
+  const { id } = useParams<{ id: string }>();
+
   // 글 하나는 객체 하나. 아직 받아오기 전에는 "없음"을 뜻하는 null 로 시작한다.
   // 타입 = 글 객체 | null  (둘 중 하나)
   const [post, setPost] = useState<{
@@ -16,10 +21,12 @@ export default function Page() {
 
   useEffect(() => {
     // 글 단건조회 API: GET /api/v1/posts/{id}
-    fetch("http://localhost:8080/api/v1/posts/1")
+    // 백틱(`) 템플릿 리터럴로 URL 에 id 를 끼워 넣는다.
+    fetch(`http://localhost:8080/api/v1/posts/${id}`)
       .then((res) => res.json())
       .then(setPost);
-  }, []);
+    // 의존성 배열에 id 를 넣었다. → id 가 바뀌면(다른 글로 이동하면) 이 effect 가 다시 실행되어 새 글을 불러온다.
+  }, [id]);
 
   return (
     <>

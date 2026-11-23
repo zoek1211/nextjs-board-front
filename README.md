@@ -41,6 +41,7 @@ pnpm dev                     # http://localhost:3000
 - [013-5 명시적 타입으로 되돌리고 코드 다듬기](#013-5-명시적-타입으로-되돌리고-코드-다듬기)
 - [015-1 글 상세페이지 구현(1번 글 고정)](#015-1-글-상세페이지-구현1번-글-고정)
 - [015-2 post가 있을 때만 상세 내용 렌더링](#015-2-post가-있을-때만-상세-내용-렌더링)
+- [016 path 파라미터로 글 번호 가져오기](#016-path-파라미터로-글-번호-가져오기)
 
 ---
 
@@ -565,4 +566,46 @@ useEffect(() => {
     <div style={{ whiteSpace: "pre-line" }}>{post.content}</div>
   </>
 )}
+```
+
+---
+
+## 016 path 파라미터로 글 번호 가져오기
+
+- 변경 내용: [commit/016](https://github.com/zoek1211/nextjs-board-front/commit/016) · 전체 코드: [tree/016](https://github.com/zoek1211/nextjs-board-front/tree/016)
+- 강의: 16강, path 파라미터 값을 가져오기
+
+### 핵심 내용
+
+- **`useParams()`**: 현재 URL 의 동적 세그먼트 값을 꺼낸다. `/posts/3` 이면 `{ id: "3" }`. 폴더 이름 `[id]` 가 키가 된다.
+- URL 은 문자열이라 path 파라미터의 타입은 항상 `string` 이다.
+- 템플릿 리터럴(`` `.../posts/${id}` ``)로 URL 에 id 를 넣는다.
+- `useEffect` 의 의존성 배열에 **`[id]`** 를 넣었다. id 가 바뀌면 effect 가 다시 실행되어 새 글을 불러온다.
+- **`loading.tsx` 추가**: 같은 폴더의 `page.tsx` 를 자동으로 `<Suspense>` 로 감싸고, 준비되는 동안 로딩 화면을 보여 준다.
+  - Cache Components 에서는 페이지를 빌드 시점에 미리 만든다. 그런데 `useParams()` 값은 실제 요청이 와야 알 수 있다.
+  - Suspense 경계가 없으면 빌드가 실패한다. (직접 확인: `Next.js encountered URL data useParams() in a Client Component outside of <Suspense>`)
+
+### 코드 발췌
+
+`src/app/posts/[id]/page.tsx`
+
+```tsx
+import { useParams } from "next/navigation";
+
+const { id } = useParams<{ id: string }>();   // /posts/3 → "3"
+
+useEffect(() => {
+  fetch(`http://localhost:8080/api/v1/posts/${id}`)
+    .then((res) => res.json())
+    .then(setPost);
+}, [id]);   // id 가 바뀌면 다시 실행
+```
+
+`src/app/posts/[id]/loading.tsx`
+
+```tsx
+// page.tsx 를 <Suspense fallback={<Loading />}> 로 감싸 주는 특수 파일
+export default function Loading() {
+  return <div>로딩중...</div>;
+}
 ```
