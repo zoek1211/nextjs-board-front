@@ -26,6 +26,7 @@ pnpm dev                     # http://localhost:3000
 ## 목차
 
 - [001 Next.js 프로젝트 생성](#001-nextjs-프로젝트-생성)
+- [004 레이아웃과 페이지, 메인 페이지 정리](#004-레이아웃과-페이지-메인-페이지-정리)
 
 ---
 
@@ -84,5 +85,43 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
+}
+```
+
+---
+
+## 004 레이아웃과 페이지, 메인 페이지 정리
+
+- 변경 내용: [commit/004](https://github.com/zoek1211/nextjs-board-front/commit/004) · 전체 코드: [tree/004](https://github.com/zoek1211/nextjs-board-front/tree/004)
+- 강의: 4강, `src/app/layout.tsx` == 레이아웃, `src/app/page.tsx` == 페이지
+
+### 핵심 내용
+
+- **레이아웃(`layout.tsx`)** 은 여러 페이지가 공유하는 껍데기이고, **페이지(`page.tsx`)** 는 URL 마다 바뀌는 알맹이다.
+- 레이아웃의 `{children}` 자리에 현재 URL 의 페이지가 끼워진다.
+- 기본 화면을 지우고 `안녕하세요.` 만 남겼다. 사이트 제목(`metadata.title`)은 "사이트 A", `lang` 은 `ko` 로 바꿨다.
+- 프론트 앱 주소는 `http://localhost:3000` 이다. `127.0.0.1:3000` 이 아니라 `localhost` 로 접속해야 백엔드 CORS 설정과 맞는다.
+
+### 코드 발췌
+
+`src/app/layout.tsx`
+
+```tsx
+export const metadata: Metadata = {
+  title: "사이트 A",                  // 브라우저 탭 제목
+  description: "스프링부트, Next.js 연동",
+};
+
+<html lang="ko" /* 한국어 사이트 */ ...>
+  <body className="min-h-full flex flex-col">{children}</body>
+</html>
+```
+
+`src/app/page.tsx`
+
+```tsx
+// "/" 주소의 페이지. 리턴한 JSX 가 layout 의 {children} 자리에 들어간다.
+export default function Home() {
+  return <div>안녕하세요.</div>;
 }
 ```
