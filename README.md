@@ -52,6 +52,7 @@ pnpm dev                     # http://localhost:3000
 - [019-6 교차 타입으로 중복 제거](#019-6-교차-타입으로-중복-제거)
 - [020 .env와 NEXT_PUBLIC_API_BASE_URL 환경변수](#020-env와-next_public_api_base_url-환경변수)
 - [021 apiFetch 함수로 보일러플레이트 제거](#021-apifetch-함수로-보일러플레이트-제거)
+- [022-1 글쓰기 페이지와 링크 추가](#022-1-글쓰기-페이지와-링크-추가)
 
 ---
 
@@ -935,4 +936,34 @@ fetch(`${NEXT_PUBLIC_API_BASE_URL}/api/v1/posts`)
 // 후
 apiFetch(`/api/v1/posts`)
   .then(setPosts);
+```
+
+---
+
+## 022-1 글쓰기 페이지와 링크 추가
+
+- 변경 내용: [commit/022-1](https://github.com/zoek1211/nextjs-board-front/commit/022-1) · 전체 코드: [tree/022-1](https://github.com/zoek1211/nextjs-board-front/tree/022-1)
+- 강의: 22강, 글 쓰기 페이지 추가, 글 쓰기 폼 추가, 유효성 체크 (1단계: 페이지와 링크)
+
+### 핵심 내용
+
+- `src/app/posts/write/page.tsx` 로 `/posts/write` 페이지를 만들고, 글 목록 아래에 글쓰기 링크를 달았다.
+- `/posts/[id]` 가 있어도 `/posts/write` 는 글쓰기 페이지로 간다. Next.js 는 **고정된 이름의 폴더(`write`)를 동적 세그먼트(`[id]`)보다 먼저** 매칭하기 때문이다.
+
+### 코드 발췌
+
+`src/app/posts/page.tsx`
+
+```tsx
+<div>
+  <Link href="/posts/write">글쓰기</Link>
+</div>
+```
+
+`src/app/posts/write/page.tsx`
+
+```tsx
+export default function Page() {
+  return <div>글쓰기</div>;
+}
 ```

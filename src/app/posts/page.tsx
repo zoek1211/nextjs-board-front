@@ -58,6 +58,11 @@ export default function Page() {
           </li>
         ))}
       </ul>
+
+      {/* 글쓰기 페이지(/posts/write)로 가는 링크 */}
+      <div>
+        <Link href="/posts/write">글쓰기</Link>
+      </div>
     </>
   );
 }

@@ -53,8 +53,8 @@
 | 020 | `020 .env 추가, NEXT_PUBLIC_API_BASE_URL 사용` | `.env`, `posts/page.tsx`, `posts/[id]/page.tsx` |
 | 021 | `021 apiFetch 함수 추가로 API 호출 보일러플레이트 제거` | `lib/backend/client.ts`, 두 페이지 |
 
-- [ ] 013-1 ~ 021 완료
-- [ ] **체크포인트:** 목록 → 상세 이동, 로딩 표시 확인 → push
+- [x] 013-1 ~ 021 완료
+- [x] **체크포인트:** 목록 → 상세 이동, 로딩 표시 확인 → push
 
 ## Phase 3: 글 작성 (기능 4)
 
