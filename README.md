@@ -62,6 +62,7 @@ pnpm dev                     # http://localhost:3000
 - [026-2 삭제 전 확인창](#026-2-삭제-전-확인창)
 - [027 apiFetch에 Headers 클래스 도입](#027-apifetch에-headers-클래스-도입)
 - [028-1 글 수정 페이지 추가](#028-1-글-수정-페이지-추가)
+- [028-2 기존 글을 불러와 수정 폼에 채우기](#028-2-기존-글을-불러와-수정-폼에-채우기)
 
 ---
 
@@ -1293,4 +1294,41 @@ export default function Page() {
 
   return <div>{id}번 글 수정페이지</div>;
 }
+```
+
+---
+
+## 028-2 기존 글을 불러와 수정 폼에 채우기
+
+- 변경 내용: [commit/028-2](https://github.com/zoek1211/nextjs-board-front/commit/028-2) · 전체 코드: [tree/028-2](https://github.com/zoek1211/nextjs-board-front/tree/028-2)
+- 강의: 28강 (2단계: 기존 글을 불러와 수정 폼에 채우기)
+
+### 핵심 내용
+
+- 수정 폼에 기존 내용을 채우려고 상세페이지와 같은 방식으로 글을 불러온다(`apiFetch` + `useState` + `useEffect`).
+- **`defaultValue`**: 입력칸의 초기값만 정하고, 이후에는 사용자가 자유롭게 고칠 수 있다. `value` 를 쓰면 리액트가 값을 고정해서 `onChange` 로 상태를 바꾸지 않는 한 입력이 안 된다. 상태 없이 기존 내용을 채우는 가장 간단한 방법이다.
+- `defaultValue` 는 처음 그릴 때 한 번만 반영된다. 그래서 **가드 클로즈**로 글이 도착한 뒤에 폼을 그린다.
+- **`autoFocus`**: 페이지가 열리면 커서가 바로 제목 칸에 놓인다.
+- 브라우저에서 확인한 결과: 상세에서 "수정" 클릭 → `/posts/8/edit`. 제목/내용이 기존 값으로 채워져 있고 커서가 제목 칸에 있다.
+
+### 코드 발췌
+
+`src/app/posts/[id]/edit/page.tsx`
+
+```tsx
+const [post, setPost] = useState<PostWithContentDto | null>(null);
+
+useEffect(() => {
+  apiFetch(`/api/v1/posts/${id}`).then(setPost);
+}, [id]);
+
+if (post == null) return <div>로딩중...</div>;
+
+<form className="flex flex-col gap-2 p-2">
+  <input className="border p-2 rounded" type="text" name="title" placeholder="제목"
+    autoFocus defaultValue={post.title} />
+  <textarea className="border p-2 rounded" name="content" placeholder="내용"
+    defaultValue={post.content} />
+  <button className="border p-2 rounded" type="submit">저장</button>
+</form>
 ```
