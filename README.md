@@ -29,6 +29,7 @@ pnpm dev                     # http://localhost:3000
 - [004 레이아웃과 페이지, 메인 페이지 정리](#004-레이아웃과-페이지-메인-페이지-정리)
 - [005 글 목록 페이지(/posts) 추가](#005-글-목록-페이지posts-추가)
 - [006 사이트 공통 상단바 구현](#006-사이트-공통-상단바-구현)
+- [007 a 태그 대신 Link 사용](#007-a-태그-대신-link-사용)
 
 ---
 
@@ -195,4 +196,36 @@ export default function Page() {
   <main>{children}</main>   {/* 페이지마다 바뀌는 부분 */}
   <footer>푸터</footer>
 </body>
+```
+
+---
+
+## 007 a 태그 대신 Link 사용
+
+- 변경 내용: [commit/007](https://github.com/zoek1211/nextjs-board-front/commit/007) · 전체 코드: [tree/007](https://github.com/zoek1211/nextjs-board-front/tree/007)
+- 강의: 7강, a는 느리고 Link는 빠르다.
+
+### 핵심 내용
+
+| | `<a href>` | `<Link href>` |
+|---|---|---|
+| 이동 방식 | 페이지 전체를 서버에서 다시 받음 (새로고침) | 바뀌는 페이지 부분만 받아서 교체 (클라이언트 사이드 이동) |
+| 레이아웃 | 매번 다시 그림 | 그대로 유지 |
+| 미리 받기 | 없음 | 화면에 보이는 링크의 페이지를 미리 받아 둠 (prefetch) |
+| 체감 속도 | 깜빡임, 느림 | 즉시 전환 |
+
+- Next.js 안에서 내부 페이지로 이동할 때는 항상 `Link` 를 쓴다. 외부 사이트 링크는 `<a>` 를 써도 된다.
+- `Link` 는 결국 `<a>` 태그로 렌더링되므로 `className` 등은 그대로 쓸 수 있다.
+
+### 코드 발췌
+
+`src/app/layout.tsx`
+
+```tsx
+import Link from "next/link";
+
+<nav className="flex">
+  <Link href="/" className="p-2 rounded hover:bg-gray-100">메인</Link>
+  <Link href="/posts" className="p-2 rounded hover:bg-gray-100">글 목록</Link>
+</nav>
 ```

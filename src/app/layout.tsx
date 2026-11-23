@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+// Link : Next.js 의 페이지 이동 컴포넌트. 화면에는 <a> 로 그려지지만 클릭 시 동작이 다르다.
+import Link from "next/link";
 // 전역 CSS. 여기서 import 하면 모든 페이지에 적용된다. (테일윈드도 globals.css 안에서 불러온다)
 import "./globals.css";
 
@@ -38,14 +40,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           {/* flex : 메뉴(a)들을 가로로 나란히 배치 */}
           <nav className="flex">
             {/* p-2 : 안쪽 여백, rounded : 모서리 둥글게, hover:bg-gray-100 : 마우스를 올리면 회색 배경 */}
-            {/* a 태그는 클릭할 때마다 페이지 전체를 새로 받아온다(새로고침). 7강에서 Link 와 비교한다. */}
-            {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- 6강: 전체 페이지 이동을 다음 강의의 Link와 비교합니다. */}
-            <a href="/" className="p-2 rounded hover:bg-gray-100">
+            {/* a 는 느리고 Link 는 빠르다.
+                - a    : 클릭하면 HTML/JS/CSS 를 전부 다시 받아온다(새로고침). 화면이 깜빡이고 상태가 초기화된다.
+                - Link : 바뀌는 부분(page)만 받아와서 교체한다(클라이언트 사이드 이동). 레이아웃은 그대로 유지된다.
+                         게다가 화면에 보이는 Link 의 페이지는 미리 받아 두기(prefetch) 때문에 더 빠르다. */}
+            <Link href="/" className="p-2 rounded hover:bg-gray-100">
               메인
-            </a>
-            <a href="/posts" className="p-2 rounded hover:bg-gray-100">
+            </Link>
+            <Link href="/posts" className="p-2 rounded hover:bg-gray-100">
               글 목록
-            </a>
+            </Link>
           </nav>
         </header>
         {/* 페이지마다 바뀌는 본문. 현재 URL 의 page.tsx 가 여기에 들어간다. */}
