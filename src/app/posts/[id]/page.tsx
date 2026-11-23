@@ -1,7 +1,7 @@
 "use client"; // 상태(useState)와 useEffect 를 쓰기 위해 클라이언트 컴포넌트로
 
 // 글 타입 (src/type/post.ts). import type 은 타입만 가져와서 실행 코드에는 포함되지 않는다.
-import type { PostDto } from "@/type/post";
+import type { PostWithContentDto } from "@/type/post";
 // useParams : 현재 URL 의 동적 세그먼트 값(path 파라미터)을 꺼내는 Next.js 훅
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -14,8 +14,8 @@ export default function Page() {
   const { id } = useParams<{ id: string }>();
 
   // 글 하나는 객체 하나. 아직 받아오기 전에는 "없음"을 뜻하는 null 로 시작한다.
-  // 길게 쓰던 객체 타입 대신 PostDto 라는 이름의 타입을 쓴다. 타입 = PostDto | null
-  const [post, setPost] = useState<PostDto | null>(null);
+  // 상세페이지는 본문까지 필요하므로 PostWithContentDto 를 쓴다. 타입 = PostWithContentDto | null
+  const [post, setPost] = useState<PostWithContentDto | null>(null);
 
   useEffect(() => {
     // 글 단건조회 API: GET /api/v1/posts/{id}

@@ -45,6 +45,7 @@ pnpm dev                     # http://localhost:3000
 - [017 목록에서 각 글에 상세 링크 걸기](#017-목록에서-각-글에-상세-링크-걸기)
 - [018 가드 클로즈 패턴 적용](#018-가드-클로즈-패턴-적용)
 - [019-1 PostDto 타입 정의](#019-1-postdto-타입-정의)
+- [019-2 PostWithContentDto 타입 분리](#019-2-postwithcontentdto-타입-분리)
 
 ---
 
@@ -704,4 +705,36 @@ import type { PostDto } from "@/type/post";
 
 const [posts, setPosts] = useState<PostDto[]>([]);      // 목록
 const [post, setPost] = useState<PostDto | null>(null); // 상세
+```
+
+---
+
+## 019-2 PostWithContentDto 타입 분리
+
+- 변경 내용: [commit/019-2](https://github.com/zoek1211/nextjs-board-front/commit/019-2) · 전체 코드: [tree/019-2](https://github.com/zoek1211/nextjs-board-front/tree/019-2)
+- 강의: 19강 (2단계: 목록용 PostDto 와 상세용 PostWithContentDto 로 나누기)
+
+### 핵심 내용
+
+- 목록 화면에는 본문(`content`)이 필요 없다. 그래서 타입을 쓰임새에 맞게 둘로 나눴다.
+  - `PostDto`: `id`, `title` (목록용)
+  - `PostWithContentDto`: `id`, `title`, `content` (상세용)
+- 이렇게 나누면 목록 화면에서 실수로 `post.content` 를 쓰는 순간 TypeScript 가 에러로 알려 준다.
+- 상세페이지 상태 타입을 `PostWithContentDto | null` 로 바꿨다.
+
+### 코드 발췌
+
+`src/type/post.ts`
+
+```ts
+export type PostDto = {
+  id: number;
+  title: string;
+};
+
+export type PostWithContentDto = {
+  id: number;
+  title: string;
+  content: string;
+};
 ```
