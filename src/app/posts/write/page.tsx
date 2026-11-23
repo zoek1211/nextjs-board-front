@@ -1,5 +1,8 @@
 "use client"; // onSubmit 이벤트 처리를 위해 클라이언트 컴포넌트로
 
+// 백엔드 호출 공용 함수. 이제 POST 도 지원한다. (src/lib/backend/client.ts)
+import { apiFetch } from "@/lib/backend/client";
+
 // src/app/posts/write/page.tsx == "/posts/write" 주소(글쓰기 페이지)
 // 고정 이름 폴더(write)는 동적 세그먼트([id])보다 먼저 매칭되므로 /posts/write 는 이 페이지가 처리한다.
 export default function Page() {
@@ -44,13 +47,10 @@ export default function Page() {
     }
 
     // 여기까지 왔다면 제목과 내용이 모두 채워져 있다. → 글 작성 API 호출
-    // GET 이 아닌 요청은 fetch 의 두 번째 인자(옵션)로 method, headers, body 를 넘긴다.
-    fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/posts`, {
+    // GET 이 아닌 요청은 두 번째 인자(옵션)로 method, body 를 넘긴다.
+    // 백엔드 주소 붙이기, Content-Type 헤더, res.json() 은 apiFetch 가 대신 해 준다.
+    apiFetch(`/api/v1/posts`, {
       method: "POST", // 글 작성 = POST /api/v1/posts
-      headers: {
-        // "보내는 본문이 JSON 이다"라고 서버에 알린다. 이게 없으면 스프링이 본문을 JSON 으로 읽지 못한다.
-        "Content-Type": "application/json; charset=utf-8",
-      },
       // 본문은 문자열이어야 하므로 자바스크립트 객체를 JSON 문자열로 바꾼다.
       // {"title":"...","content":"..."} → 백엔드의 요청 DTO(title, content)와 필드 이름을 맞춘다.
       body: JSON.stringify({
@@ -58,7 +58,6 @@ export default function Page() {
         content: contentTextarea.value,
       }),
     })
-      .then((response) => response.json())
       .then((data) => {
         // 백엔드는 { resultCode, msg, data } 모양(RsData)으로 응답한다.
         // msg : "1번 글이 작성되었습니다." 같은 결과 메시지

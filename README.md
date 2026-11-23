@@ -55,6 +55,7 @@ pnpm dev                     # http://localhost:3000
 - [022-1 글쓰기 페이지와 링크 추가](#022-1-글쓰기-페이지와-링크-추가)
 - [022-2 글쓰기 폼과 유효성 체크](#022-2-글쓰기-폼과-유효성-체크)
 - [023 글 작성 API 호출](#023-글-작성-api-호출)
+- [024 apiFetch 확장(POST 지원)](#024-apifetch-확장post-지원)
 
 ---
 
@@ -1047,5 +1048,52 @@ fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/posts`, {
   .then((response) => response.json())
   .then((data) => {
     alert(data.msg);   // "4번 글이 작성되었습니다."
+  });
+```
+
+---
+
+## 024 apiFetch 확장(POST 지원)
+
+- 변경 내용: [commit/024](https://github.com/zoek1211/nextjs-board-front/commit/024) · 전체 코드: [tree/024](https://github.com/zoek1211/nextjs-board-front/tree/024)
+- 강의: 24강, apiFetch 함수를 확장하여 POST 요청도 가능하도록, 글 쓰기에 apiFetch 사용
+
+### 핵심 내용
+
+- `apiFetch` 에 두 번째 인자 **`options?: RequestInit`** 를 추가했다. `RequestInit` 은 `fetch` 옵션(method, headers, body …)의 타입이고, `?` 는 생략 가능하다는 뜻이다.
+- 본문(`body`)이 있으면 `Content-Type: application/json` 헤더를 **자동으로** 붙인다. 호출한 쪽이 넘긴 헤더는 스프레드(`...options.headers`)로 유지한다.
+- 글쓰기 페이지는 `apiFetch` 를 쓰면서 백엔드 주소, `headers`, `response.json()` 코드가 모두 빠져 훨씬 짧아졌다.
+
+### 코드 발췌
+
+`src/lib/backend/client.ts`
+
+```ts
+export const apiFetch = (url: string, options?: RequestInit) => {
+  if (options?.body) {
+    options.headers = {
+      ...options.headers,
+      "Content-Type": "application/json; charset=utf-8",
+    };
+  }
+
+  return fetch(`${NEXT_PUBLIC_API_BASE_URL}${url}`, options).then((res) =>
+    res.json()
+  );
+};
+```
+
+`src/app/posts/write/page.tsx`
+
+```tsx
+apiFetch(`/api/v1/posts`, {
+  method: "POST",
+  body: JSON.stringify({
+    title: titleInput.value,
+    content: contentTextarea.value,
+  }),
+})
+  .then((data) => {
+    alert(data.msg);
   });
 ```
