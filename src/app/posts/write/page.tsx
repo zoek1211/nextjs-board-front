@@ -69,8 +69,10 @@ export default function Page() {
         alert(data.msg);
 
         // 작성된 글의 상세페이지로 이동. data.data 가 새로 만들어진 글(PostDto)이다.
-        // router.push : 브라우저 방문 기록(history)에 새 페이지를 "추가"하며 이동한다.
-        router.push(`/posts/${data.data.id}`);
+        // router.push    : 방문 기록(history)에 새 페이지를 "추가" → 상세에서 뒤로가기 하면 다시 글쓰기 폼으로 돌아온다.
+        // router.replace : 현재 페이지(글쓰기)를 방문 기록에서 "교체" → 뒤로가기 하면 글쓰기 폼을 건너뛰고 그 이전 페이지로 간다.
+        // 이미 제출한 폼으로 돌아가 같은 글을 또 저장하는 실수를 막기 위해 replace 를 쓴다.
+        router.replace(`/posts/${data.data.id}`);
       });
   };
 

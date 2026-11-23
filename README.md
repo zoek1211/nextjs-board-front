@@ -57,6 +57,7 @@ pnpm dev                     # http://localhost:3000
 - [023 글 작성 API 호출](#023-글-작성-api-호출)
 - [024 apiFetch 확장(POST 지원)](#024-apifetch-확장post-지원)
 - [025-1 글 작성 후 상세페이지로 이동(push)](#025-1-글-작성-후-상세페이지로-이동push)
+- [025-2 router.replace로 변경](#025-2-routerreplace로-변경)
 
 ---
 
@@ -1124,5 +1125,33 @@ const router = useRouter();
 .then((data) => {
   alert(data.msg);
   router.push(`/posts/${data.data.id}`);   // 작성된 글 상세로 이동
+});
+```
+
+---
+
+## 025-2 router.replace로 변경
+
+- 변경 내용: [commit/025-2](https://github.com/zoek1211/nextjs-board-front/commit/025-2) · 전체 코드: [tree/025-2](https://github.com/zoek1211/nextjs-board-front/tree/025-2)
+- 강의: 25강 (2단계: router.replace 로 변경)
+
+### 핵심 내용
+
+| | `router.push` | `router.replace` |
+|---|---|---|
+| 방문 기록 | 새 페이지를 **추가** | 현재 페이지를 **교체** |
+| 상세에서 뒤로가기 | 글쓰기 폼으로 돌아감 | 글쓰기 폼을 건너뛰고 그 이전 페이지(목록)로 |
+
+- 이미 제출한 폼으로 돌아가서 같은 글을 또 저장하는 실수를 막으려고 `replace` 를 쓴다.
+- 브라우저에서 확인한 결과: 목록 → 글쓰기 → 저장(`/posts/7`) 후 history 길이는 그대로(+0)이고, 뒤로가기 하면 `/posts` 로 간다.
+
+### 코드 발췌
+
+`src/app/posts/write/page.tsx`
+
+```tsx
+.then((data) => {
+  alert(data.msg);
+  router.replace(`/posts/${data.data.id}`);   // 글쓰기 페이지를 기록에서 교체
 });
 ```
