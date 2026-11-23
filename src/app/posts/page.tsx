@@ -24,9 +24,13 @@ export default function Page() {
   // [2단계] 데이터를 "상태"로 만든다.
   // 일반 변수는 값이 바뀌어도 화면이 다시 그려지지 않는다. 상태(state)여야 setPosts 로 바꿨을 때 화면이 갱신된다.
   // 처음에는 빈 배열([])로 시작하고, 나중에 데이터가 도착하면 채운다.
-  // 상태의 타입: PostDto 의 배열. (src/type/post.ts 에 정의한 타입을 재사용)
-  // 명시적인 타입 덕분에 post.titel 같은 오타를 TypeScript 가 바로 잡아 준다.
-  const [posts, setPosts] = useState<PostDto[]>([]);
+  // 상태의 타입: PostDto 의 배열 또는 null. (src/type/post.ts 에 정의한 타입을 재사용)
+  //
+  // 왜 초기값이 [] 가 아니라 null 이어야 하나?
+  //   초기값이 [] 이면 "아직 불러오는 중"과 "다 불러왔는데 글이 0개"가 둘 다 빈 배열이라 구분할 수 없다.
+  //   그래서 이전 코드는 글이 하나도 없을 때 영원히 "로딩중..."을 보여 주는 버그가 있었다.
+  //   null = 아직 모름(로딩중), [] = 확실히 0개 → 두 상태를 정확히 나눌 수 있다.
+  const [posts, setPosts] = useState<PostDto[] | null>(null);
 
   // 빈 의존성 배열([]) → 컴포넌트가 처음 화면에 나타났을 때(마운트) 딱 한 번만 실행된다.
   useEffect(() => {
@@ -41,23 +45,29 @@ export default function Page() {
       .then(setPosts);
   }, []);
 
+  // 가드 클로즈: 아직 불러오는 중(null)이면 로딩 화면만 보여 주고 끝낸다.
+  // 이 아래에서 posts 는 확실히 배열이다.
+  if (posts == null) return <div>로딩중...</div>;
+
   return (
     <>
       <h1>글 목록</h1>
 
-      {/* 조건부 렌더링: && 앞이 true 일 때만 뒤의 JSX 가 그려진다.
-          아직 데이터가 도착하기 전(빈 배열)이면 로딩중... 을 보여 준다. */}
-      {posts.length == 0 && <div>로딩중...</div>}
+      {/* 다 불러왔는데 0개 → 로딩중이 아니라 "글이 없습니다" */}
+      {posts.length == 0 && <div>글이 없습니다.</div>}
 
-      <ul>
-        {/* map 으로 만든 최상위 엘리먼트에는 고유한 key 가 필수 */}
-        {posts.map((post) => (
-          <li key={post.id}>
-            {/* 각 글 제목을 상세페이지(/posts/글번호) 링크로 만든다 */}
-            <Link href={`/posts/${post.id}`}>{post.title}</Link>
-          </li>
-        ))}
-      </ul>
+      {/* 글이 있을 때만 목록을 그린다 */}
+      {posts.length > 0 && (
+        <ul>
+          {/* map 으로 만든 최상위 엘리먼트에는 고유한 key 가 필수 */}
+          {posts.map((post) => (
+            <li key={post.id}>
+              {/* 각 글 제목을 상세페이지(/posts/글번호) 링크로 만든다 */}
+              <Link href={`/posts/${post.id}`}>{post.title}</Link>
+            </li>
+          ))}
+        </ul>
+      )}
 
       {/* 글쓰기 페이지(/posts/write)로 가는 링크 */}
       <div>

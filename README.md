@@ -65,6 +65,7 @@ pnpm dev                     # http://localhost:3000
 - [028-2 기존 글을 불러와 수정 폼에 채우기](#028-2-기존-글을-불러와-수정-폼에-채우기)
 - [029 글 수정 API 호출](#029-글-수정-api-호출)
 - [030 댓글 다건조회](#030-댓글-다건조회)
+- [031 다건조회 상태 초기값이 null이어야 하는 이유](#031-다건조회-상태-초기값이-null이어야-하는-이유)
 
 ---
 
@@ -1428,4 +1429,48 @@ useEffect(() => {
     ))}
   </ul>
 )}
+```
+
+---
+
+## 031 다건조회 상태 초기값이 null이어야 하는 이유
+
+- 변경 내용: [commit/031](https://github.com/zoek1211/nextjs-board-front/commit/031) · 전체 코드: [tree/031](https://github.com/zoek1211/nextjs-board-front/tree/031)
+- 강의: 31강, 글과 댓글의 다건조회에서 관련 상태의 초기값이 null 이어야 하는 이유
+
+### 핵심 내용
+
+- 글 목록 상태의 초기값이 `[]` 이면 **"아직 불러오는 중"과 "다 불러왔는데 0개"를 구분할 수 없다.** 둘 다 빈 배열이기 때문이다.
+- 그래서 이전 코드(`posts.length == 0 && 로딩중...`)는 글이 하나도 없으면 **영원히 "로딩중..."** 을 보여 주는 버그가 있었다.
+- 초기값을 **`null`** 로 바꿔 상태를 정확히 나눈다.
+  - `null` → 로딩중 (가드 클로즈로 먼저 처리)
+  - `[]` → "글이 없습니다."
+  - 원소 있음 → 목록
+- 30강의 댓글 목록도 같은 이유로 처음부터 `null` 로 시작했다.
+
+### 코드 발췌
+
+`src/app/posts/page.tsx`
+
+```tsx
+const [posts, setPosts] = useState<PostDto[] | null>(null);
+
+if (posts == null) return <div>로딩중...</div>;
+
+return (
+  <>
+    <h1>글 목록</h1>
+    {posts.length == 0 && <div>글이 없습니다.</div>}
+    {posts.length > 0 && (
+      <ul>
+        {posts.map((post) => (
+          <li key={post.id}>
+            <Link href={`/posts/${post.id}`}>{post.title}</Link>
+          </li>
+        ))}
+      </ul>
+    )}
+    ...
+  </>
+);
 ```
