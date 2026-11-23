@@ -61,6 +61,7 @@ pnpm dev                     # http://localhost:3000
 - [026-1 글 삭제 버튼과 삭제 API 호출](#026-1-글-삭제-버튼과-삭제-api-호출)
 - [026-2 삭제 전 확인창](#026-2-삭제-전-확인창)
 - [027 apiFetch에 Headers 클래스 도입](#027-apifetch에-headers-클래스-도입)
+- [028-1 글 수정 페이지 추가](#028-1-글-수정-페이지-추가)
 
 ---
 
@@ -1262,4 +1263,34 @@ export const apiFetch = (url: string, options?: RequestInit) => {
     res.json()
   );
 };
+```
+
+---
+
+## 028-1 글 수정 페이지 추가
+
+- 변경 내용: [commit/028-1](https://github.com/zoek1211/nextjs-board-front/commit/028-1) · 전체 코드: [tree/028-1](https://github.com/zoek1211/nextjs-board-front/tree/028-1)
+- 강의: 28강, 글 수정 폼 구현 (1단계: 수정 페이지 추가)
+
+### 핵심 내용
+
+- `src/app/posts/[id]/edit/page.tsx` 로 `/posts/글번호/edit` 페이지를 만든다. 26강에서 단 "수정" 링크가 이 페이지로 온다.
+- `[id]` 폴더 안에 있으므로 `useParams()` 로 부모의 `id` 를 그대로 읽을 수 있다.
+- 이 폴더에는 `loading.tsx` 가 없지만 빌드가 통과한다. 부모(`posts/[id]`)의 `loading.tsx` 가 만든 Suspense 경계가 하위 경로까지 감싸기 때문이다.
+
+### 코드 발췌
+
+`src/app/posts/[id]/edit/page.tsx`
+
+```tsx
+"use client";
+
+import { useParams } from "next/navigation";
+
+export default function Page() {
+  const { id: idStr } = useParams<{ id: string }>();
+  const id = Number(idStr);
+
+  return <div>{id}번 글 수정페이지</div>;
+}
 ```
