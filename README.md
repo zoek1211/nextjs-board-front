@@ -68,6 +68,7 @@ pnpm dev                     # http://localhost:3000
 - [031 다건조회 상태 초기값이 null이어야 하는 이유](#031-다건조회-상태-초기값이-null이어야-하는-이유)
 - [032 댓글 삭제(UI 미반영)](#032-댓글-삭제ui-미반영)
 - [033 댓글 삭제 후 상태 갱신으로 UI 반영](#033-댓글-삭제-후-상태-갱신으로-ui-반영)
+- [034-1 댓글 작성 폼과 작성 API 호출](#034-1-댓글-작성-폼과-작성-api-호출)
 
 ---
 
@@ -1550,4 +1551,53 @@ const deleteComment = (id: number, commentId: number) => {
     setPostComments(postComments.filter((c) => c.id != commentId));
   });
 };
+```
+
+---
+
+## 034-1 댓글 작성 폼과 작성 API 호출
+
+- 변경 내용: [commit/034-1](https://github.com/zoek1211/nextjs-board-front/commit/034-1) · 전체 코드: [tree/034-1](https://github.com/zoek1211/nextjs-board-front/tree/034-1)
+- 강의: 34강, 댓글 작성 (1단계: 댓글 작성 폼과 작성 API 호출)
+
+### 핵심 내용
+
+- 상세페이지에 **댓글 작성 폼**(textarea + 작성 버튼)을 추가했다. 글쓰기 폼과 같은 패턴이다: `preventDefault` → `trim` 유효성 체크 → API 호출.
+- **`POST /api/v1/posts/{글번호}/comments`**: 어느 글의 댓글인지는 URL 에 들어 있으므로 본문에는 `content` 만 보낸다.
+- 작성 후 `contentTextarea.value = ""` 로 입력칸을 비워서 다음 댓글을 바로 쓸 수 있게 한다.
+- **한계:** 아직 `postComments` 상태에 새 댓글을 넣지 않아서 목록에는 새로고침해야 보인다. (034-2 에서 해결)
+- 브라우저에서 확인한 결과: 공백만 넣으면 "댓글 내용을 입력해주세요."가 뜬다. 작성하면 "6번 댓글이 작성되었습니다."가 뜨고 입력칸이 비워진다. 서버에는 저장됐지만 화면 목록에는 아직 없다.
+
+### 코드 발췌
+
+`src/app/posts/[id]/page.tsx`
+
+```tsx
+const handleCommentWriteFormSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
+  e.preventDefault();
+
+  const form = e.currentTarget;
+  const contentTextarea = form.elements.namedItem("content") as HTMLTextAreaElement;
+
+  contentTextarea.value = contentTextarea.value.trim();
+  if (contentTextarea.value.length === 0) {
+    alert("댓글 내용을 입력해주세요.");
+    contentTextarea.focus();
+    return;
+  }
+
+  apiFetch(`/api/v1/posts/${id}/comments`, {
+    method: "POST",
+    body: JSON.stringify({ content: contentTextarea.value }),
+  }).then((data) => {
+    alert(data.msg);
+    contentTextarea.value = "";
+  });
+};
+
+<h2>댓글 작성</h2>
+<form className="flex gap-2" onSubmit={handleCommentWriteFormSubmit}>
+  <textarea className="border p-2 rounded" name="content" placeholder="댓글 내용" />
+  <button className="p-2 rounded border" type="submit">작성</button>
+</form>
 ```

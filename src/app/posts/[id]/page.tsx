@@ -64,6 +64,44 @@ export default function Page() {
     });
   };
 
+  // 댓글 작성 폼 제출 처리. 글쓰기 폼(22~25강)과 같은 패턴이다.
+  const handleCommentWriteFormSubmit = (
+    e: React.SyntheticEvent<HTMLFormElement>
+  ) => {
+    e.preventDefault(); // 폼 기본 제출(페이지 새로고침) 막기
+
+    const form = e.currentTarget;
+
+    const contentTextarea = form.elements.namedItem(
+      "content"
+    ) as HTMLTextAreaElement;
+
+    // 유효성 체크: 공백만 입력한 경우도 빈 값으로 처리
+    contentTextarea.value = contentTextarea.value.trim();
+
+    if (contentTextarea.value.length === 0) {
+      alert("댓글 내용을 입력해주세요.");
+      contentTextarea.focus();
+
+      return;
+    }
+
+    // 댓글 작성 API: POST /api/v1/posts/{글번호}/comments
+    // 어느 글의 댓글인지는 URL 에 들어 있으므로, 본문에는 content 만 보낸다.
+    apiFetch(`/api/v1/posts/${id}/comments`, {
+      method: "POST",
+      body: JSON.stringify({
+        content: contentTextarea.value,
+      }),
+    }).then((data) => {
+      alert(data.msg); // "4번 댓글이 작성되었습니다."
+
+      // 다음 댓글을 바로 쓸 수 있게 입력칸을 비운다.
+      contentTextarea.value = "";
+      // 아직 댓글 목록(postComments 상태)에는 추가하지 않았다. → 새로고침해야 보인다. (034-2 에서 해결)
+    });
+  };
+
   useEffect(() => {
     // 글 단건조회 API: GET /api/v1/posts/{id}
     // 백틱(`) 템플릿 리터럴로 URL 에 id 를 끼워 넣는다.
@@ -115,6 +153,22 @@ export default function Page() {
       </div>
 
       {/* hr : 구분선, my-2 : 위아래 바깥 여백 */}
+      <hr className="my-2" />
+
+      <h2>댓글 작성</h2>
+
+      {/* flex gap-2 : 입력칸과 작성 버튼을 가로로 나란히 */}
+      <form className="flex gap-2" onSubmit={handleCommentWriteFormSubmit}>
+        <textarea
+          className="border p-2 rounded"
+          name="content"
+          placeholder="댓글 내용"
+        />
+        <button className="p-2 rounded border" type="submit">
+          작성
+        </button>
+      </form>
+
       <hr className="my-2" />
 
       <h2>댓글 목록</h2>
