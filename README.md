@@ -67,6 +67,7 @@ pnpm dev                     # http://localhost:3000
 - [030 댓글 다건조회](#030-댓글-다건조회)
 - [031 다건조회 상태 초기값이 null이어야 하는 이유](#031-다건조회-상태-초기값이-null이어야-하는-이유)
 - [032 댓글 삭제(UI 미반영)](#032-댓글-삭제ui-미반영)
+- [033 댓글 삭제 후 상태 갱신으로 UI 반영](#033-댓글-삭제-후-상태-갱신으로-ui-반영)
 
 ---
 
@@ -1516,4 +1517,37 @@ const deleteComment = (id: number, commentId: number) => {
     삭제
   </button>
 </li>
+```
+
+---
+
+## 033 댓글 삭제 후 상태 갱신으로 UI 반영
+
+- 변경 내용: [commit/033](https://github.com/zoek1211/nextjs-board-front/commit/033) · 전체 코드: [tree/033](https://github.com/zoek1211/nextjs-board-front/tree/033)
+- 강의: 33강, 댓글 삭제 요청이 성공하면 postComments 의 상태를 변경하여 UI에서도 댓글이 제거되도록
+
+### 핵심 내용
+
+- 서버에서 지운 것을 화면에도 반영하려면 **상태를 바꿔야 한다.** 리액트는 상태가 바뀌어야 다시 그린다.
+- **`filter`** 로 삭제한 댓글만 뺀 **새 배열**을 만들어 `setPostComments` 에 넣는다.
+- 리액트 상태는 기존 배열을 직접 고치면(`splice` 등) 변경을 알아채지 못한다. 항상 새 배열이나 새 객체를 만들어서 넣는다(불변성).
+- `if (postComments == null) return;` 은 타입 좁히기용 가드다.
+- 브라우저에서 확인한 결과: 댓글 1-2 삭제 → "2번 댓글이 삭제되었습니다." → 새로고침 없이 화면에서 바로 사라진다.
+
+### 코드 발췌
+
+`src/app/posts/[id]/page.tsx`
+
+```tsx
+const deleteComment = (id: number, commentId: number) => {
+  apiFetch(`/api/v1/posts/${id}/comments/${commentId}`, {
+    method: "DELETE",
+  }).then((data) => {
+    alert(data.msg);
+
+    if (postComments == null) return;
+
+    setPostComments(postComments.filter((c) => c.id != commentId));
+  });
+};
 ```

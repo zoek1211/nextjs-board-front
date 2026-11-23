@@ -51,7 +51,16 @@ export default function Page() {
       method: "DELETE",
     }).then((data) => {
       alert(data.msg); // "1번 댓글이 삭제되었습니다."
-      // 아직은 서버에서만 지워지고 화면(postComments 상태)은 그대로다. → 새로고침해야 사라진다. (33강에서 해결)
+
+      // 서버에서 지운 것을 화면에도 반영하려면 상태(postComments)를 바꿔야 한다.
+      // (32강에서는 이 부분이 없어서 새로고침해야 사라졌다)
+
+      // 타입 좁히기용 가드: 댓글 목록이 없을 때는 할 일이 없다.
+      if (postComments == null) return;
+
+      // filter : 조건이 true 인 원소만 모은 "새 배열"을 만든다. → 삭제한 댓글(commentId)만 빠진 배열
+      // 리액트 상태는 기존 배열을 직접 고치지(splice 등) 말고, 새 배열을 만들어 set 해야 변경을 알아챈다.
+      setPostComments(postComments.filter((c) => c.id != commentId));
     });
   };
 
