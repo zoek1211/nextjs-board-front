@@ -1,3 +1,4 @@
+/* 테일윈드 CSS 를 불러온다. 이 한 줄 덕분에 className 에 테일윈드 클래스를 쓸 수 있다. */
 @import "tailwindcss";
 
 :root {
@@ -12,12 +13,18 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/*
+  다크 모드 자동 전환을 끈다(주석 처리).
+  OS 가 다크 모드면 배경이 검게 바뀌어서, 강의에서 배경색/테두리를 눈으로 확인하기 어렵기 때문이다.
+*/
+/*
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
   }
 }
+*/
 
 body {
   background: var(--background);

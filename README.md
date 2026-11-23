@@ -31,6 +31,7 @@ pnpm dev                     # http://localhost:3000
 - [006 사이트 공통 상단바 구현](#006-사이트-공통-상단바-구현)
 - [007 a 태그 대신 Link 사용](#007-a-태그-대신-link-사용)
 - [008 서버 컴포넌트와 클라이언트 컴포넌트](#008-서버-컴포넌트와-클라이언트-컴포넌트)
+- [010 body의 외연과 배경색](#010-body의-외연과-배경색)
 
 ---
 
@@ -265,4 +266,38 @@ export default function Page() {
     </>
   );
 }
+```
+
+---
+
+## 010 body의 외연과 배경색
+
+- 변경 내용: [commit/010](https://github.com/zoek1211/nextjs-board-front/commit/010) · 전체 코드: [tree/010](https://github.com/zoek1211/nextjs-board-front/tree/010)
+- 강의: 10강, 오직 body 엘리먼트만 배경색이 본인의 영역을 벗어나서 화면을 가득 채우게 됩니다. (9강: 개발자 도구로 엘리먼트의 스타일을 추적하는 방법)
+
+### 핵심 내용
+
+- **body 의 외연(실제 영역) 확인 방법:** 테두리(`border-2 border-blue-500`)를 그려 보면 body 는 내용 높이만큼만 차지한다.
+- 그런데 배경색(`!bg-red-500`)은 화면 전체를 채운다. **body 의 배경색만** 자기 영역을 넘어 화면 전체(캔버스)로 퍼지는 CSS 특수 규칙 때문이다. 그래서 "배경이 꽉 찼으니 body 도 꽉 찼겠지"라고 착각하기 쉽다.
+- 테일윈드의 `!` 접두사는 `!important` 다. `globals.css` 의 `body { background: ... }` 를 이기기 위해 붙였다.
+- OS 다크 모드일 때 배경이 검게 바뀌면 실험 결과를 보기 어려우니, `globals.css` 의 다크 모드 블록을 주석 처리했다.
+- 9강 팁: 브라우저 개발자 도구(Elements 탭)에서 엘리먼트를 선택하면 적용된 스타일과 그 출처를 볼 수 있다.
+
+### 코드 발췌
+
+`src/app/layout.tsx`
+
+```tsx
+{/* 테두리는 body 크기만큼, 배경은 화면 전체 → body 의 실제 크기는 배경으로 판단하면 안 된다 */}
+<body className="flex flex-col !bg-red-500 border-2 border-blue-500">
+```
+
+`src/app/globals.css`
+
+```css
+/*
+@media (prefers-color-scheme: dark) {
+  :root { --background: #0a0a0a; --foreground: #ededed; }
+}
+*/
 ```

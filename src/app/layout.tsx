@@ -34,7 +34,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} antialiased`}
     >
       {/* flex flex-col : body 의 자식(header, main, footer)을 위에서 아래로 쌓는다 */}
-      <body className="flex flex-col">
+      {/* [10강 실험] body 의 외연(차지하는 영역)을 눈으로 확인하기
+          - border-2 border-blue-500 : 파란 테두리 → body 의 실제 크기는 내용만큼(위쪽 일부)뿐이다.
+          - !bg-red-500 : 그런데 배경색은 화면 전체가 빨갛게 된다.
+            → 오직 body 엘리먼트만 배경색이 자기 영역을 벗어나 화면(캔버스) 전체를 채운다. (CSS 의 특수 규칙)
+          - ! 접두사 : 테일윈드의 important. globals.css 의 body { background } 보다 우선하게 만든다. */}
+      <body className="flex flex-col !bg-red-500 border-2 border-blue-500">
         {/* 사이트 공통 상단바. 레이아웃에 있으므로 모든 페이지에 똑같이 보인다. */}
         <header>
           {/* flex : 메뉴(a)들을 가로로 나란히 배치 */}
