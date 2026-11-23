@@ -98,7 +98,14 @@ export default function Page() {
 
       // 다음 댓글을 바로 쓸 수 있게 입력칸을 비운다.
       contentTextarea.value = "";
-      // 아직 댓글 목록(postComments 상태)에는 추가하지 않았다. → 새로고침해야 보인다. (034-2 에서 해결)
+
+      // 새 댓글을 화면 목록에도 반영한다. (034-1 에서는 이 부분이 없어서 새로고침해야 보였다)
+      if (postComments == null) return;
+
+      // data.data : 서버가 방금 만든 댓글(PostCommentDto). id, 작성일 등이 서버에서 정해져 돌아온다.
+      // [...postComments, data.data] : 기존 배열을 펼치고(스프레드) 맨 뒤에 새 댓글을 붙인 "새 배열"
+      // push 로 기존 배열을 직접 고치면 리액트가 변경을 알아채지 못하므로 항상 새 배열을 만들어 set 한다.
+      setPostComments([...postComments, data.data]);
     });
   };
 

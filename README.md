@@ -69,6 +69,7 @@ pnpm dev                     # http://localhost:3000
 - [032 댓글 삭제(UI 미반영)](#032-댓글-삭제ui-미반영)
 - [033 댓글 삭제 후 상태 갱신으로 UI 반영](#033-댓글-삭제-후-상태-갱신으로-ui-반영)
 - [034-1 댓글 작성 폼과 작성 API 호출](#034-1-댓글-작성-폼과-작성-api-호출)
+- [034-2 작성한 댓글을 목록에 바로 반영](#034-2-작성한-댓글을-목록에-바로-반영)
 
 ---
 
@@ -1600,4 +1601,34 @@ const handleCommentWriteFormSubmit = (e: React.SyntheticEvent<HTMLFormElement>) 
   <textarea className="border p-2 rounded" name="content" placeholder="댓글 내용" />
   <button className="p-2 rounded border" type="submit">작성</button>
 </form>
+```
+
+---
+
+## 034-2 작성한 댓글을 목록에 바로 반영
+
+- 변경 내용: [commit/034-2](https://github.com/zoek1211/nextjs-board-front/commit/034-2) · 전체 코드: [tree/034-2](https://github.com/zoek1211/nextjs-board-front/tree/034-2)
+- 강의: 34강 (2단계: 작성한 댓글을 목록 상태에 바로 추가)
+
+### 핵심 내용
+
+- 서버는 방금 만든 댓글을 응답의 **`data.data`** 로 돌려준다. `id`, 작성일 등은 서버가 정한 값이다.
+- **`[...postComments, data.data]`**: 기존 배열을 스프레드로 펼치고 맨 뒤에 새 댓글을 붙인 새 배열을 만든다. `push` 로 기존 배열을 직접 고치면 리액트가 변경을 알아채지 못한다(33강의 `filter` 와 같은 원리).
+- 이제 댓글 **작성과 삭제가 모두 새로고침 없이** 화면에 바로 반영된다.
+- 브라우저에서 확인한 결과(8번 글): "댓글이 없습니다." → 댓글 2개 작성하면 바로 목록에 나타난다 → 첫 댓글 삭제하면 바로 사라진다.
+
+### 코드 발췌
+
+`src/app/posts/[id]/page.tsx`
+
+```tsx
+}).then((data) => {
+  alert(data.msg);
+
+  contentTextarea.value = "";
+
+  if (postComments == null) return;
+
+  setPostComments([...postComments, data.data]);   // 새 배열 = 기존 + 새 댓글
+});
 ```
