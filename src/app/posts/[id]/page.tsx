@@ -28,25 +28,21 @@ export default function Page() {
     // 의존성 배열에 id 를 넣었다. → id 가 바뀌면(다른 글로 이동하면) 이 effect 가 다시 실행되어 새 글을 불러온다.
   }, [id]);
 
+  // 가드 클로즈(guard clause) 패턴:
+  // "아직 준비가 안 된 경우"를 함수 앞부분에서 먼저 처리하고 바로 return 해 버린다.
+  // 이 줄 아래에서는 post 가 절대 null 이 아니므로 TypeScript 도 post 를 글 객체로 확신한다(타입 좁히기).
+  // → JSX 안에서 post == null && ..., post != null && (...) 로 두 번 나눠 쓸 필요가 없어진다.
+  if (post == null) return <div>로딩중...</div>;
+
   return (
     <>
       <h1>글 상세페이지</h1>
 
-      {/* 아직 도착 전(null)이면 로딩중... */}
-      {post == null && <div>로딩중...</div>}
-
-      {/* post 가 있을 때만 상세 내용을 통째로 그린다.
-          이 블록 안에서는 TypeScript 가 post 를 null 이 아닌 것으로 확신하므로(타입 좁히기)
-          post?.id 대신 post.id 처럼 ?. 없이 깔끔하게 쓸 수 있다. */}
-      {post != null && (
-        <>
-          <div>번호 : {post.id}</div>
-          <div>제목: {post.title}</div>
-          {/* whiteSpace: "pre-line" : 본문의 줄바꿈(\n)을 화면에서도 줄바꿈으로 보여 준다.
-              JSX 의 style 은 객체로 쓰고, CSS 속성 이름은 camelCase(white-space → whiteSpace)로 쓴다. */}
-          <div style={{ whiteSpace: "pre-line" }}>{post.content}</div>
-        </>
-      )}
+      <div>번호 : {post.id}</div>
+      <div>제목: {post.title}</div>
+      {/* whiteSpace: "pre-line" : 본문의 줄바꿈(\n)을 화면에서도 줄바꿈으로 보여 준다.
+          JSX 의 style 은 객체로 쓰고, CSS 속성 이름은 camelCase(white-space → whiteSpace)로 쓴다. */}
+      <div style={{ whiteSpace: "pre-line" }}>{post.content}</div>
     </>
   );
 }

@@ -43,6 +43,7 @@ pnpm dev                     # http://localhost:3000
 - [015-2 post가 있을 때만 상세 내용 렌더링](#015-2-post가-있을-때만-상세-내용-렌더링)
 - [016 path 파라미터로 글 번호 가져오기](#016-path-파라미터로-글-번호-가져오기)
 - [017 목록에서 각 글에 상세 링크 걸기](#017-목록에서-각-글에-상세-링크-걸기)
+- [018 가드 클로즈 패턴 적용](#018-가드-클로즈-패턴-적용)
 
 ---
 
@@ -636,4 +637,34 @@ import Link from "next/link";
     <Link href={`/posts/${post.id}`}>{post.title}</Link>
   </li>
 ))}
+```
+
+---
+
+## 018 가드 클로즈 패턴 적용
+
+- 변경 내용: [commit/018](https://github.com/zoek1211/nextjs-board-front/commit/018) · 전체 코드: [tree/018](https://github.com/zoek1211/nextjs-board-front/tree/018)
+- 강의: 18강, 가드 클로즈(guard clause) 패턴을 적용하여 소스코드를 조금 더 깔끔하게
+
+### 핵심 내용
+
+- **가드 클로즈**: "아직 준비가 안 된 경우"처럼 예외적인 상황을 함수 앞부분에서 먼저 처리하고 바로 `return` 한다.
+- `if (post == null) return <div>로딩중...</div>;` 아래에서는 `post` 가 절대 `null` 이 아니다. TypeScript 도 이를 알기 때문에(타입 좁히기) JSX 를 조건 없이 평평하게 쓸 수 있다.
+- JSX 안의 `post == null && ...` / `post != null && (...)` 두 갈래가 사라져서 들여쓰기가 줄고 읽기 쉬워진다.
+
+### 코드 발췌
+
+`src/app/posts/[id]/page.tsx`
+
+```tsx
+if (post == null) return <div>로딩중...</div>;   // 가드 클로즈
+
+return (
+  <>
+    <h1>글 상세페이지</h1>
+    <div>번호 : {post.id}</div>        {/* post 는 확실히 존재 */}
+    <div>제목: {post.title}</div>
+    <div style={{ whiteSpace: "pre-line" }}>{post.content}</div>
+  </>
+);
 ```
