@@ -46,6 +46,7 @@ pnpm dev                     # http://localhost:3000
 - [018 가드 클로즈 패턴 적용](#018-가드-클로즈-패턴-적용)
 - [019-1 PostDto 타입 정의](#019-1-postdto-타입-정의)
 - [019-2 PostWithContentDto 타입 분리](#019-2-postwithcontentdto-타입-분리)
+- [019-3 type 대신 interface로 정의해 보기](#019-3-type-대신-interface로-정의해-보기)
 
 ---
 
@@ -733,6 +734,40 @@ export type PostDto = {
 };
 
 export type PostWithContentDto = {
+  id: number;
+  title: string;
+  content: string;
+};
+```
+
+---
+
+## 019-3 type 대신 interface로 정의해 보기
+
+- 변경 내용: [commit/019-3](https://github.com/zoek1211/nextjs-board-front/commit/019-3) · 전체 코드: [tree/019-3](https://github.com/zoek1211/nextjs-board-front/tree/019-3)
+- 강의: 19강 (3단계: type 대신 interface 로 정의해 보기)
+
+### 핵심 내용
+
+- 객체 모양을 정의하는 방법은 `type` 과 `interface` 두 가지다. 이번 용도(필드 목록 정의)에서는 결과가 같다.
+
+| | `type` | `interface` |
+|---|---|---|
+| 문법 | `type PostDto = { ... }` (`=` 로 별명 붙이기) | `interface PostDto { ... }` |
+| 대상 | 객체뿐 아니라 유니온(`A \| B`), 교차(`A & B`) 등 모든 타입 | 객체 모양만 |
+| 확장 | `&` (교차 타입) | `extends` |
+
+### 코드 발췌
+
+`src/type/post.ts`
+
+```ts
+export interface PostDto {
+  id: number;
+  title: string;
+};
+
+export interface PostWithContentDto {
   id: number;
   title: string;
   content: string;
