@@ -170,13 +170,13 @@ export default function Page() {
 
 ## Success Criteria
 
-- [ ] 9개 기능이 `localhost:3000` 에서 `localhost:8080` 백엔드와 연동되어 동작
-- [ ] 위 목록의 모든 태그(46개)가 GitHub `zoek1211/nextjs-board-front` 에 존재하고, `/commit/<태그>` 로 해당 강의의 변경 내용이, `/tree/<태그>` 로 그 시점 전체 코드가 열림
-- [ ] README 의 모든 섹션에 `/commit/<태그>`(주 링크)와 `/tree/<태그>`(보조 링크)가 있음
-- [ ] 모든 커밋 메시지가 `<번호> <설명>` 형식
-- [ ] README 에 목차, 커밋별 핵심 내용, 코드 발췌, 커밋/트리 링크가 있음
-- [ ] 코드 파일마다 학습용 주석
-- [ ] 최종 태그 `034-2` 에서 `pnpm build`, `pnpm lint` 통과
+- [x] 9개 기능이 `localhost:3000` 에서 `localhost:8080` 백엔드와 연동되어 동작
+- [x] 위 목록의 모든 태그(45개)가 GitHub `zoek1211/nextjs-board-front` 에 존재하고, `/commit/<태그>` 로 해당 강의의 변경 내용이, `/tree/<태그>` 로 그 시점 전체 코드가 열림
+- [x] README 의 모든 섹션에 `/commit/<태그>`(주 링크)와 `/tree/<태그>`(보조 링크)가 있음
+- [x] 모든 커밋 메시지가 `<번호> <설명>` 형식
+- [x] README 에 목차, 커밋별 핵심 내용, 코드 발췌, 커밋/트리 링크가 있음
+- [x] 코드 파일마다 학습용 주석
+- [x] 최종 태그 `034-2` 에서 `pnpm build`, `pnpm lint` 통과
 
 ## Out of Scope (Deferred)
 

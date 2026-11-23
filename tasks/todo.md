@@ -95,12 +95,12 @@
 | 034-1 | `034-1 댓글 작성 폼과 작성 API 호출` | `posts/[id]/page.tsx` |
 | 034-2 | `034-2 댓글 작성 후 처리 정리` | `posts/[id]/page.tsx` |
 
-- [ ] 030 ~ 034-2 완료
-- [ ] **체크포인트:** 댓글 목록, 삭제 즉시 반영, 작성 즉시 반영 확인 → push
+- [x] 030 ~ 034-2 완료
+- [x] **체크포인트:** 댓글 목록, 삭제 즉시 반영, 작성 즉시 반영 확인 → push
 
 ## 최종 검증
 
-- [ ] SPEC의 Success Criteria 전체 확인
-- [ ] `git tag | wc -l` = 46, GitHub에도 태그 46개
-- [ ] README 목차 링크와 commit/tree 링크를 무작위로 골라 열어 보기
-- [ ] 정답 `034-2` 와 최종 diff 비교 (주석과 README 제외)
+- [x] SPEC의 Success Criteria 전체 확인
+- [x] `git tag | wc -l` = 45, GitHub에도 태그 45개 (계획 당시 46으로 잘못 셌음)
+- [x] README 목차 45개 앵커가 모두 실제 제목과 일치, commit/tree 링크 90개 모두 HTTP 200
+- [x] 정답 리포와 45개 태그 전부 비교 (주석/README 제외): 파일 구성과 코드가 모두 일치
