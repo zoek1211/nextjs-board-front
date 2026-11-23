@@ -56,6 +56,7 @@ pnpm dev                     # http://localhost:3000
 - [022-2 글쓰기 폼과 유효성 체크](#022-2-글쓰기-폼과-유효성-체크)
 - [023 글 작성 API 호출](#023-글-작성-api-호출)
 - [024 apiFetch 확장(POST 지원)](#024-apifetch-확장post-지원)
+- [025-1 글 작성 후 상세페이지로 이동(push)](#025-1-글-작성-후-상세페이지로-이동push)
 
 ---
 
@@ -1096,4 +1097,32 @@ apiFetch(`/api/v1/posts`, {
   .then((data) => {
     alert(data.msg);
   });
+```
+
+---
+
+## 025-1 글 작성 후 상세페이지로 이동(push)
+
+- 변경 내용: [commit/025-1](https://github.com/zoek1211/nextjs-board-front/commit/025-1) · 전체 코드: [tree/025-1](https://github.com/zoek1211/nextjs-board-front/tree/025-1)
+- 강의: 25강, 글 쓰기 후, 메세지 출력 후 상세페이지로 이동 (1단계: router.push)
+
+### 핵심 내용
+
+- **`useRouter()`**: 코드로 페이지를 이동시키는 훅이다. App Router 에서는 `next/router` 가 아니라 **`next/navigation`** 에서 가져온다.
+- 글 작성 응답의 `data.data` 가 새로 만들어진 글이다. 그 `id` 로 상세페이지(`/posts/6`)로 이동한다.
+- **`router.push`**: 방문 기록(history)에 새 페이지를 추가하면서 이동한다. 브라우저에서 확인한 결과 history 가 1 늘어났다.
+
+### 코드 발췌
+
+`src/app/posts/write/page.tsx`
+
+```tsx
+import { useRouter } from "next/navigation";
+
+const router = useRouter();
+
+.then((data) => {
+  alert(data.msg);
+  router.push(`/posts/${data.data.id}`);   // 작성된 글 상세로 이동
+});
 ```

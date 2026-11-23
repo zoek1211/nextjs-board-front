@@ -2,10 +2,15 @@
 
 // 백엔드 호출 공용 함수. 이제 POST 도 지원한다. (src/lib/backend/client.ts)
 import { apiFetch } from "@/lib/backend/client";
+// useRouter : 코드로 페이지를 이동시키는 Next.js 훅 (Link 를 클릭하지 않고 이동할 때)
+// 주의: App Router 에서는 "next/router" 가 아니라 "next/navigation" 에서 가져온다.
+import { useRouter } from "next/navigation";
 
 // src/app/posts/write/page.tsx == "/posts/write" 주소(글쓰기 페이지)
 // 고정 이름 폴더(write)는 동적 세그먼트([id])보다 먼저 매칭되므로 /posts/write 는 이 페이지가 처리한다.
 export default function Page() {
+  const router = useRouter();
+
   // 폼 제출(submit) 이벤트 핸들러.
   // React.SyntheticEvent<HTMLFormElement> : 리액트가 브라우저 이벤트를 감싼 객체의 타입. (폼에서 발생한 이벤트)
   const handleSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
@@ -62,6 +67,10 @@ export default function Page() {
         // 백엔드는 { resultCode, msg, data } 모양(RsData)으로 응답한다.
         // msg : "1번 글이 작성되었습니다." 같은 결과 메시지
         alert(data.msg);
+
+        // 작성된 글의 상세페이지로 이동. data.data 가 새로 만들어진 글(PostDto)이다.
+        // router.push : 브라우저 방문 기록(history)에 새 페이지를 "추가"하며 이동한다.
+        router.push(`/posts/${data.data.id}`);
       });
   };
 
