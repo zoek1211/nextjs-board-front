@@ -66,6 +66,7 @@ pnpm dev                     # http://localhost:3000
 - [029 글 수정 API 호출](#029-글-수정-api-호출)
 - [030 댓글 다건조회](#030-댓글-다건조회)
 - [031 다건조회 상태 초기값이 null이어야 하는 이유](#031-다건조회-상태-초기값이-null이어야-하는-이유)
+- [032 댓글 삭제(UI 미반영)](#032-댓글-삭제ui-미반영)
 
 ---
 
@@ -1473,4 +1474,46 @@ return (
     ...
   </>
 );
+```
+
+---
+
+## 032 댓글 삭제(UI 미반영)
+
+- 변경 내용: [commit/032](https://github.com/zoek1211/nextjs-board-front/commit/032) · 전체 코드: [tree/032](https://github.com/zoek1211/nextjs-board-front/tree/032)
+- 강의: 32강, 댓글 삭제, 하지만 아직 UI에 바로 반영되지는 않고 웹 페이지 리프레시를 해야 함
+
+### 핵심 내용
+
+- 댓글마다 삭제 버튼을 달고, **`DELETE /api/v1/posts/{글번호}/comments/{댓글번호}`** 를 호출한다. 댓글은 글에 속하므로 URL 도 계층 구조다.
+- 글 삭제와 같은 패턴이다: `confirm(...) && deleteComment(...)`.
+- **한계:** 서버에서는 지워지지만 화면의 `postComments` 상태는 그대로라서, 새로고침하기 전까지 댓글이 계속 보인다.
+- 브라우저에서 확인한 결과: "3번 댓글이 삭제되었습니다." 후 화면에는 여전히 댓글 1-1, 1-2, 1-3이 있다. 서버를 직접 조회하면 1-1, 1-2만 있다.
+
+### 코드 발췌
+
+`src/app/posts/[id]/page.tsx`
+
+```tsx
+const deleteComment = (id: number, commentId: number) => {
+  apiFetch(`/api/v1/posts/${id}/comments/${commentId}`, {
+    method: "DELETE",
+  }).then((data) => {
+    alert(data.msg);
+    // 상태를 바꾸지 않았으므로 화면은 그대로 (33강에서 해결)
+  });
+};
+
+<li key={comment.id} className="py-2">
+  {comment.content}
+  <button
+    className="ml-2 p-2 rounded border"
+    onClick={() =>
+      confirm(`${comment.id}번 댓글을 정말로 삭제하시겠습니까?`) &&
+      deleteComment(id, comment.id)
+    }
+  >
+    삭제
+  </button>
+</li>
 ```

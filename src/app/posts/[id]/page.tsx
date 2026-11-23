@@ -44,6 +44,17 @@ export default function Page() {
     });
   };
 
+  // 댓글 삭제: DELETE /api/v1/posts/{글번호}/comments/{댓글번호}
+  // 댓글은 글에 속해 있으므로 URL 도 글 아래에 댓글이 있는 계층 구조다.
+  const deleteComment = (id: number, commentId: number) => {
+    apiFetch(`/api/v1/posts/${id}/comments/${commentId}`, {
+      method: "DELETE",
+    }).then((data) => {
+      alert(data.msg); // "1번 댓글이 삭제되었습니다."
+      // 아직은 서버에서만 지워지고 화면(postComments 상태)은 그대로다. → 새로고침해야 사라진다. (33강에서 해결)
+    });
+  };
+
   useEffect(() => {
     // 글 단건조회 API: GET /api/v1/posts/{id}
     // 백틱(`) 템플릿 리터럴로 URL 에 id 를 끼워 넣는다.
@@ -112,7 +123,21 @@ export default function Page() {
       {postComments != null && postComments.length > 0 && (
         <ul>
           {postComments.map((comment) => (
-            <li key={comment.id}>{comment.content}</li>
+            // py-2 : 위아래 안쪽 여백
+            <li key={comment.id} className="py-2">
+              {comment.content}
+              {/* ml-2 : 왼쪽 바깥 여백(댓글 내용과 간격)
+                  글 삭제와 같은 패턴: confirm 이 true 일 때만 && 뒤의 deleteComment 실행 */}
+              <button
+                className="ml-2 p-2 rounded border"
+                onClick={() =>
+                  confirm(`${comment.id}번 댓글을 정말로 삭제하시겠습니까?`) &&
+                  deleteComment(id, comment.id)
+                }
+              >
+                삭제
+              </button>
+            </li>
           ))}
         </ul>
       )}
