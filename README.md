@@ -63,6 +63,7 @@ pnpm dev                     # http://localhost:3000
 - [027 apiFetch에 Headers 클래스 도입](#027-apifetch에-headers-클래스-도입)
 - [028-1 글 수정 페이지 추가](#028-1-글-수정-페이지-추가)
 - [028-2 기존 글을 불러와 수정 폼에 채우기](#028-2-기존-글을-불러와-수정-폼에-채우기)
+- [029 글 수정 API 호출](#029-글-수정-api-호출)
 
 ---
 
@@ -1331,4 +1332,45 @@ if (post == null) return <div>로딩중...</div>;
     defaultValue={post.content} />
   <button className="border p-2 rounded" type="submit">저장</button>
 </form>
+```
+
+---
+
+## 029 글 수정 API 호출
+
+- 변경 내용: [commit/029](https://github.com/zoek1211/nextjs-board-front/commit/029) · 전체 코드: [tree/029](https://github.com/zoek1211/nextjs-board-front/tree/029)
+- 강의: 29강, 글 수정 폼에서 생성된 데이터로 수정 API에 호출
+
+### 핵심 내용
+
+- 글쓰기 페이지와 같은 흐름이다: `preventDefault` → 입력값 꺼내기 → `trim` 유효성 체크 → API 호출 → 메시지 → 이동.
+- 다른 점은 API 하나다. **`PUT /api/v1/posts/{id}`**. PUT 은 대상을 보낸 내용으로 교체(수정)하고, POST 는 새로 생성한다.
+- 저장 후 `router.replace(`/posts/${id}`)` 로 상세페이지로 가서, 뒤로가기로 수정 폼에 돌아오지 않게 한다.
+- `handleSubmit` 은 가드 클로즈(`if (post == null) return ...`) 아래에 있어도 된다. 훅이 아닌 일반 함수이기 때문이다. 반대로 `useState`, `useEffect` 같은 **훅은 항상 조건문과 `return` 보다 위**에서 매번 같은 순서로 호출되어야 한다.
+- 브라우저에서 확인한 결과: 빈 제목이면 "제목을 입력해주세요."가 뜬다. 정상 저장하면 "8번 글이 수정되었습니다." 후 `/posts/8` 에 수정된 제목과 줄바꿈된 내용이 보인다.
+
+### 코드 발췌
+
+`src/app/posts/[id]/edit/page.tsx`
+
+```tsx
+const router = useRouter();
+
+const handleSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
+  e.preventDefault();
+  // ... 유효성 체크 (글쓰기와 동일)
+
+  apiFetch(`/api/v1/posts/${id}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      title: titleInput.value,
+      content: contentTextarea.value,
+    }),
+  }).then((data) => {
+    alert(data.msg);
+    router.replace(`/posts/${id}`);
+  });
+};
+
+<form className="flex flex-col gap-2 p-2" onSubmit={handleSubmit}>
 ```
