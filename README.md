@@ -37,6 +37,7 @@ pnpm dev                     # http://localhost:3000
 - [013-1 글 목록을 배열 데이터로 렌더링](#013-1-글-목록을-배열-데이터로-렌더링)
 - [013-2 글 목록 데이터를 상태로 만들기](#013-2-글-목록-데이터를-상태로-만들기)
 - [013-3 상태 타입을 any로 느슨하게](#013-3-상태-타입을-any로-느슨하게)
+- [013-4 백엔드 글 다건조회 API fetch](#013-4-백엔드-글-다건조회-api-fetch)
 
 ---
 
@@ -448,4 +449,32 @@ useEffect(() => {
 ```tsx
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- any 의 한계를 비교하기 위해
 const [posts, setPosts] = useState<{ [key: string]: any }[]>([]);
+```
+
+---
+
+## 013-4 백엔드 글 다건조회 API fetch
+
+- 변경 내용: [commit/013-4](https://github.com/zoek1211/nextjs-board-front/commit/013-4) · 전체 코드: [tree/013-4](https://github.com/zoek1211/nextjs-board-front/tree/013-4)
+- 강의: 13강 (4단계: 진짜 백엔드 API 를 fetch)
+
+### 핵심 내용
+
+- `setTimeout` 흉내를 지우고, 백엔드의 글 다건조회 API(`GET http://localhost:8080/api/v1/posts`)를 **`fetch`** 로 호출한다.
+- `fetch` 는 **프로미스(Promise)** 를 리턴한다. 응답을 기다리지 않고 다음 줄로 넘어가고, 응답이 오면 `.then` 에 넘긴 함수가 차례로 실행된다.
+  1. `res.json()`: 응답 본문 JSON 을 자바스크립트 객체로 바꾼다 (이것도 프로미스)
+  2. `setPosts(data)`: 상태를 바꿔서 화면을 다시 그린다
+- 프론트(`localhost:3000`)와 백엔드(`localhost:8080`)는 출처(origin)가 다르다. 그래서 백엔드에 **CORS 허용 설정**이 있어야 브라우저가 응답을 받을 수 있다. 백엔드 `068` 태그의 `WebMvcConfig` 가 `http://localhost:3000` 을 허용한다.
+- 데이터가 오기 전(빈 배열)에는 `posts.length == 0 && <div>로딩중...</div>` 으로 로딩 문구를 보여 준다. `&&` 앞이 참일 때만 뒤의 JSX 가 그려지는 **조건부 렌더링**이다.
+
+### 코드 발췌
+
+```tsx
+useEffect(() => {
+  fetch("http://localhost:8080/api/v1/posts")
+    .then((res) => res.json())       // JSON → 객체
+    .then((data) => setPosts(data));  // 상태 변경 → 화면 갱신
+}, []);
+
+{posts.length == 0 && <div>로딩중...</div>}
 ```

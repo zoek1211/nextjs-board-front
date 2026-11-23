@@ -24,20 +24,24 @@ export default function Page() {
 
   // 빈 의존성 배열([]) → 컴포넌트가 처음 화면에 나타났을 때(마운트) 딱 한 번만 실행된다.
   useEffect(() => {
-    // 서버에서 데이터를 받아오는 상황을 흉내낸다. (실제 fetch 는 013-4 에서)
-    // setTimeout(..., 0) : 지금 바로가 아니라 "잠시 뒤에" 실행 → 데이터가 나중에 도착하는 비동기 상황과 같다.
-    const timer = setTimeout(() => setPosts([
-      { id: 1, title: "명언 1" },
-      { id: 2, title: "명언 2" },
-      { id: 3, title: "명언 3" },
-    ]), 0);
-    // 정리(cleanup) 함수: 컴포넌트가 사라질 때 실행된다. 예약해 둔 타이머를 취소해서 사라진 컴포넌트의 상태를 바꾸지 않게 한다.
-    return () => clearTimeout(timer);
+    // [4단계] 진짜 백엔드의 글 다건조회 API 를 호출한다.
+    // fetch 는 "프로미스(Promise)"를 리턴하는 비동기 함수다. 응답이 올 때까지 기다리지 않고 바로 다음 줄로 넘어간다.
+    // 응답이 도착하면 then 에 넘긴 함수가 차례대로 실행된다.
+    //   1) res.json() : 응답 본문(JSON 문자열)을 자바스크립트 객체로 바꾼다. 이것도 프로미스를 리턴한다.
+    //   2) setPosts(data) : 받은 글 목록으로 상태를 바꾼다 → 화면이 다시 그려진다.
+    // 브라우저(localhost:3000)가 다른 출처(localhost:8080)를 호출하는 것이라, 백엔드에 CORS 허용 설정이 있어야 한다.
+    fetch("http://localhost:8080/api/v1/posts")
+      .then((res) => res.json())
+      .then((data) => setPosts(data));
   }, []);
 
   return (
     <>
       <h1>글 목록</h1>
+
+      {/* 조건부 렌더링: && 앞이 true 일 때만 뒤의 JSX 가 그려진다.
+          아직 데이터가 도착하기 전(빈 배열)이면 로딩중... 을 보여 준다. */}
+      {posts.length == 0 && <div>로딩중...</div>}
 
       <ul>
         {/* map 으로 만든 최상위 엘리먼트에는 고유한 key 가 필수 */}
