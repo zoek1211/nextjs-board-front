@@ -30,8 +30,8 @@
 | 011 | `011 flex-grow로 푸터를 화면 하단에 배치` | `layout.tsx` |
 | 012 | `012 메인화면 텍스트 가운데 정렬` | `layout.tsx`, `page.tsx` |
 
-- [ ] 001 ~ 012 완료
-- [ ] **체크포인트:** 홈과 `/posts` 화면, 상단바와 푸터 확인 → `git push -u origin main --tags` → `commit/001`, `tree/012` 링크 열림 확인
+- [x] 001 ~ 012 완료
+- [x] **체크포인트:** 홈과 `/posts` 화면, 상단바와 푸터 확인 → `git push -u origin main --tags` → `commit/001`, `tree/012` 링크 열림 확인
 
 ## Phase 2: 글 다건조회 · 글 단건조회 (기능 2, 3)
 

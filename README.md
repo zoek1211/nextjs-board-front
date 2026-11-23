@@ -34,6 +34,7 @@ pnpm dev                     # http://localhost:3000
 - [010 body의 외연과 배경색](#010-body의-외연과-배경색)
 - [011 flex-grow로 푸터를 화면 최하단에 배치](#011-flex-grow로-푸터를-화면-최하단에-배치)
 - [012 메인화면 텍스트 가운데 정렬](#012-메인화면-텍스트-가운데-정렬)
+- [013-1 글 목록을 배열 데이터로 렌더링](#013-1-글-목록을-배열-데이터로-렌더링)
 
 ---
 
@@ -365,4 +366,35 @@ export default function Page() {
 ```tsx
 // flex-grow: main 을 꽉 채움 / items-center: 세로 가운데 / justify-center: 가로 가운데
 return <div className="flex-grow flex items-center justify-center">안녕하세요.</div>;
+```
+
+---
+
+## 013-1 글 목록을 배열 데이터로 렌더링
+
+- 변경 내용: [commit/013-1](https://github.com/zoek1211/nextjs-board-front/commit/013-1) · 전체 코드: [tree/013-1](https://github.com/zoek1211/nextjs-board-front/tree/013-1)
+- 강의: 13강, 글 목록 페이지에서 백엔드의 글 다건조회 API를 fetch 하여 받아온 내용을 렌더링 (1단계: 데이터로 UI 만들기)
+
+### 핵심 내용
+
+- `li` 를 직접 쓰는 대신 **데이터(배열)를 먼저 만들고, 그 배열로 UI 를 만든다.** 데이터가 바뀌면 화면도 따라 바뀌는 구조가 리액트의 기본 방식이다.
+- `배열.map(원소 => JSX)` 로 JSX 배열을 만들면 리액트가 그대로 그려 준다.
+- `map` 으로 만든 최상위 엘리먼트에는 **`key`** 가 꼭 필요하다. 리액트가 항목을 구분하는 이름표라서, 배열 인덱스보다 `id` 처럼 고유한 값을 쓴다.
+
+### 코드 발췌
+
+`src/app/posts/page.tsx`
+
+```tsx
+const posts = [
+  { id: 1, title: "명언 1" },
+  { id: 2, title: "명언 2" },
+  // ... 10개
+];
+
+<ul>
+  {posts.map((post) => (
+    <li key={post.id}>{post.title}</li>   // key: 고유한 값
+  ))}
+</ul>
 ```
