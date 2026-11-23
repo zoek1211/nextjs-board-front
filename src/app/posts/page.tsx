@@ -16,6 +16,13 @@ import Link from "next/link";
 // useEffect : 렌더링이 끝난 뒤에 실행할 작업(부수 효과: 데이터 불러오기, 타이머 등)을 등록한다.
 import { useEffect, useState } from "react";
 
+// 환경변수에서 백엔드 주소를 읽는다. (.env 파일의 NEXT_PUBLIC_API_BASE_URL=http://localhost:8080)
+// NEXT_PUBLIC_ 으로 시작하는 환경변수만 브라우저 코드(클라이언트 컴포넌트)에서 읽을 수 있다.
+//   빌드할 때 process.env.NEXT_PUBLIC_API_BASE_URL 자리가 실제 값 문자열로 바뀌어 들어간다.
+//   접두사가 없는 환경변수는 서버에서만 읽을 수 있다(비밀값 노출 방지).
+// 주소를 코드 곳곳에 하드코딩하지 않으면, 배포 환경이 바뀌어도 .env 만 고치면 된다.
+const NEXT_PUBLIC_API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 // src/app/posts/page.tsx == "/posts" 주소(글 목록 페이지)
 export default function Page() {
   // [2단계] 데이터를 "상태"로 만든다.
@@ -33,7 +40,7 @@ export default function Page() {
     //   1) res.json() : 응답 본문(JSON 문자열)을 자바스크립트 객체로 바꾼다. 이것도 프로미스를 리턴한다.
     //   2) setPosts(data) : 받은 글 목록으로 상태를 바꾼다 → 화면이 다시 그려진다.
     // 브라우저(localhost:3000)가 다른 출처(localhost:8080)를 호출하는 것이라, 백엔드에 CORS 허용 설정이 있어야 한다.
-    fetch("http://localhost:8080/api/v1/posts")
+    fetch(`${NEXT_PUBLIC_API_BASE_URL}/api/v1/posts`)
       .then((res) => res.json())
       // .then((data) => setPosts(data)) 와 같다.
       // 받은 값을 그대로 다른 함수에 넘기기만 할 때는 함수 자체(setPosts)를 넘기면 더 짧다.

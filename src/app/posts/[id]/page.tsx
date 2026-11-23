@@ -6,6 +6,13 @@ import type { PostWithContentDto } from "@/type/post";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
+// 환경변수에서 백엔드 주소를 읽는다. (.env 파일의 NEXT_PUBLIC_API_BASE_URL=http://localhost:8080)
+// NEXT_PUBLIC_ 으로 시작하는 환경변수만 브라우저 코드(클라이언트 컴포넌트)에서 읽을 수 있다.
+//   빌드할 때 process.env.NEXT_PUBLIC_API_BASE_URL 자리가 실제 값 문자열로 바뀌어 들어간다.
+//   접두사가 없는 환경변수는 서버에서만 읽을 수 있다(비밀값 노출 방지).
+// 주소를 코드 곳곳에 하드코딩하지 않으면, 배포 환경이 바뀌어도 .env 만 고치면 된다.
+const NEXT_PUBLIC_API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 // src/app/posts/[id]/page.tsx == "/posts/1", "/posts/2" ... 주소(글 상세페이지)
 // 폴더 이름을 [id] 처럼 대괄호로 감싸면 "동적 세그먼트"가 된다. /posts/ 뒤에 오는 어떤 값이든 이 페이지가 처리한다.
 export default function Page() {
@@ -20,7 +27,7 @@ export default function Page() {
   useEffect(() => {
     // 글 단건조회 API: GET /api/v1/posts/{id}
     // 백틱(`) 템플릿 리터럴로 URL 에 id 를 끼워 넣는다.
-    fetch(`http://localhost:8080/api/v1/posts/${id}`)
+    fetch(`${NEXT_PUBLIC_API_BASE_URL}/api/v1/posts/${id}`)
       .then((res) => res.json())
       .then(setPost);
     // 의존성 배열에 id 를 넣었다. → id 가 바뀌면(다른 글로 이동하면) 이 effect 가 다시 실행되어 새 글을 불러온다.

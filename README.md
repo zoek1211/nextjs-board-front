@@ -50,6 +50,7 @@ pnpm dev                     # http://localhost:3000
 - [019-4 다시 type으로 통일](#019-4-다시-type으로-통일)
 - [019-5 Omit으로 타입 중복 제거](#019-5-omit으로-타입-중복-제거)
 - [019-6 교차 타입으로 중복 제거](#019-6-교차-타입으로-중복-제거)
+- [020 .env와 NEXT_PUBLIC_API_BASE_URL 환경변수](#020-env와-next_public_api_base_url-환경변수)
 
 ---
 
@@ -862,4 +863,35 @@ export type PostDto = {
 export type PostWithContentDto = PostDto & {
   content: string;
 };
+```
+
+---
+
+## 020 .env와 NEXT_PUBLIC_API_BASE_URL 환경변수
+
+- 변경 내용: [commit/020](https://github.com/zoek1211/nextjs-board-front/commit/020) · 전체 코드: [tree/020](https://github.com/zoek1211/nextjs-board-front/tree/020)
+- 강의: 20강, .env 파일을 버전관리 대상에 추가, NEXT_PUBLIC_API_BASE_URL 환경변수 사용
+
+### 핵심 내용
+
+- 백엔드 주소 `http://localhost:8080` 을 코드 곳곳에 하드코딩하지 않고 **환경변수**로 뺐다. 배포 환경이 바뀌면 `.env` 만 고치면 된다.
+- **`NEXT_PUBLIC_`** 접두사가 붙은 환경변수만 브라우저 코드(클라이언트 컴포넌트)에서 읽을 수 있다. 빌드할 때 `process.env.NEXT_PUBLIC_...` 자리가 실제 값 문자열로 바뀐다. 접두사가 없는 변수는 서버에서만 읽힌다(비밀값 보호).
+- `.env` 를 git 에 커밋했다. 1강의 `.gitignore` 는 `.env.local` 만 무시하므로 `.env` 는 버전관리 대상이 된다. 안에 든 값은 공개돼도 되는 로컬 주소뿐이다. 비밀값은 절대 `NEXT_PUBLIC_` 변수나 커밋되는 `.env` 에 넣으면 안 된다.
+- `.env` 를 바꾼 뒤 개발 서버가 반영하지 않으면 `pnpm dev` 를 다시 시작한다.
+
+### 코드 발췌
+
+`.env`
+
+```bash
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
+NEXT_PUBLIC_FRONTEND_BASE_URL=http://localhost:3000
+```
+
+`src/app/posts/page.tsx`
+
+```tsx
+const NEXT_PUBLIC_API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+fetch(`${NEXT_PUBLIC_API_BASE_URL}/api/v1/posts`)
 ```
