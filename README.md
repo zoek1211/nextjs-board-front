@@ -33,6 +33,7 @@ pnpm dev                     # http://localhost:3000
 - [008 서버 컴포넌트와 클라이언트 컴포넌트](#008-서버-컴포넌트와-클라이언트-컴포넌트)
 - [010 body의 외연과 배경색](#010-body의-외연과-배경색)
 - [011 flex-grow로 푸터를 화면 최하단에 배치](#011-flex-grow로-푸터를-화면-최하단에-배치)
+- [012 메인화면 텍스트 가운데 정렬](#012-메인화면-텍스트-가운데-정렬)
 
 ---
 
@@ -328,4 +329,40 @@ export default function Page() {
   <main className="flex-grow border-6 border-green-500">{children}</main>
   <footer className="border-6 border-red-500">푸터</footer>
 </body>
+```
+
+---
+
+## 012 메인화면 텍스트 가운데 정렬
+
+- 변경 내용: [commit/012](https://github.com/zoek1211/nextjs-board-front/commit/012) · 전체 코드: [tree/012](https://github.com/zoek1211/nextjs-board-front/tree/012)
+- 강의: 12강, 메인화면에서 텍스트를 화면 가운데로 옮기기
+
+### 핵심 내용
+
+- 11강에서 쓴 확인용 색 테두리는 지운다. 레이아웃 작업이 끝났기 때문이다.
+- 화면 정가운데 배치는 **flex 를 중첩**해서 만든다.
+  1. `main` 에 `flex-grow` → main 이 header 와 footer 사이를 꽉 채움
+  2. `main` 에 `flex flex-col` → main 이 flex 컨테이너가 됨
+  3. 페이지의 `div` 에 `flex-grow` → div 가 main 을 꽉 채움
+  4. `div` 에 `flex items-center justify-center` → 글자가 div 의 가로/세로 정가운데
+- `footer` 는 `text-center` 로 가운데 정렬, `p-2` 로 여백을 줬다.
+
+### 코드 발췌
+
+`src/app/layout.tsx`
+
+```tsx
+<body className="flex flex-col min-h-screen">
+  <header>...</header>
+  <main className="flex-grow flex flex-col p-2">{children}</main>
+  <footer className="text-center p-2">푸터</footer>
+</body>
+```
+
+`src/app/page.tsx`
+
+```tsx
+// flex-grow: main 을 꽉 채움 / items-center: 세로 가운데 / justify-center: 가로 가운데
+return <div className="flex-grow flex items-center justify-center">안녕하세요.</div>;
 ```

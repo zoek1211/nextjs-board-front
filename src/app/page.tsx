@@ -17,5 +17,10 @@
 // Next.js 는 "export default" 로 내보낸 컴포넌트를 페이지로 사용한다.
 // 그래서 모든 페이지의 함수 이름을 Page 로 통일한다.
 export default function Page() {
-  return <div>안녕하세요.</div>;
+  // 메인 텍스트를 화면 정가운데로
+  //   flex-grow       : main(flex flex-col) 안에서 남는 공간을 전부 차지 → div 가 main 을 꽉 채움
+  //   flex            : div 자신을 flex 컨테이너로
+  //   items-center    : 세로(교차축) 가운데 정렬
+  //   justify-center  : 가로(주축) 가운데 정렬
+  return <div className="flex-grow flex items-center justify-center">안녕하세요.</div>;
 }

@@ -34,11 +34,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} antialiased`}
     >
       {/* flex flex-col : body 의 자식(header, main, footer)을 위에서 아래로 쌓는다 */}
-      {/* [11강 실험] 푸터를 화면 최하단에 붙이기. 각 구역에 색 테두리를 그려 영역을 눈으로 확인한다.
-          - min-h-screen : body 의 최소 높이를 화면 높이(100vh)로. 이제 body 가 화면을 꽉 채운다. */}
-      <body className="flex flex-col min-h-screen border-2 border-blue-500">
+      {/* min-h-screen : body 의 최소 높이를 화면 높이(100vh)로 → body 가 화면을 꽉 채운다 (11강) */}
+      {/* 11강에서 영역 확인용으로 그렸던 색 테두리들은 작업이 끝났으니 지운다 */}
+      <body className="flex flex-col min-h-screen">
         {/* 사이트 공통 상단바. 레이아웃에 있으므로 모든 페이지에 똑같이 보인다. */}
-        <header className="border-6 border-yellow-500">
+        <header>
           {/* flex : 메뉴(a)들을 가로로 나란히 배치 */}
           <nav className="flex">
             {/* p-2 : 안쪽 여백, rounded : 모서리 둥글게, hover:bg-gray-100 : 마우스를 올리면 회색 배경 */}
@@ -57,8 +57,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         {/* 페이지마다 바뀌는 본문. 현재 URL 의 page.tsx 가 여기에 들어간다. */}
         {/* flex-item(flex 컨테이너의 자식)의 flex-grow(성장성)는 기본값이 0 이라 내용만큼만 커진다.
             flex-grow 를 주면 남는 공간을 main 이 전부 차지 → footer 가 자연스럽게 맨 아래로 밀려난다. */}
-        <main className="flex-grow border-6 border-green-500">{children}</main>
-        <footer className="border-6 border-red-500">푸터</footer>
+        {/* flex flex-col : main 자신도 flex 컨테이너가 되어, 페이지(children)가 flex-grow 로 main 을 꽉 채울 수 있게 한다 (12강)
+            p-2 : 안쪽 여백 */}
+        <main className="flex-grow flex flex-col p-2">{children}</main>
+        {/* text-center : 글자 가운데 정렬 */}
+        <footer className="text-center p-2">푸터</footer>
       </body>
     </html>
   );
