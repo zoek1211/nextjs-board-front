@@ -7,6 +7,8 @@
 //                       그래서 상태(useState), 이벤트(onClick) 처럼 사용자와 상호작용하는 기능을 쓸 수 있다.
 // 이 강의에서는 리액트 기본기(useState, useEffect)를 그대로 쓰기 위해 페이지를 클라이언트 컴포넌트로 만든다.
 
+// Link : 페이지 이동 컴포넌트 (a 보다 빠른 클라이언트 사이드 이동, 7강)
+import Link from "next/link";
 // useState : 상태 변수를 만든다. 상태가 바뀌면 리액트가 이 컴포넌트 함수를 다시 실행해서 화면을 갱신한다.
 // useEffect : 렌더링이 끝난 뒤에 실행할 작업(부수 효과: 데이터 불러오기, 타이머 등)을 등록한다.
 import { useEffect, useState } from "react";
@@ -46,7 +48,10 @@ export default function Page() {
       <ul>
         {/* map 으로 만든 최상위 엘리먼트에는 고유한 key 가 필수 */}
         {posts.map((post) => (
-          <li key={post.id}>{post.title}</li>
+          <li key={post.id}>
+            {/* 각 글 제목을 상세페이지(/posts/글번호) 링크로 만든다 */}
+            <Link href={`/posts/${post.id}`}>{post.title}</Link>
+          </li>
         ))}
       </ul>
     </>

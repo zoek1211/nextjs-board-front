@@ -42,6 +42,7 @@ pnpm dev                     # http://localhost:3000
 - [015-1 글 상세페이지 구현(1번 글 고정)](#015-1-글-상세페이지-구현1번-글-고정)
 - [015-2 post가 있을 때만 상세 내용 렌더링](#015-2-post가-있을-때만-상세-내용-렌더링)
 - [016 path 파라미터로 글 번호 가져오기](#016-path-파라미터로-글-번호-가져오기)
+- [017 목록에서 각 글에 상세 링크 걸기](#017-목록에서-각-글에-상세-링크-걸기)
 
 ---
 
@@ -608,4 +609,31 @@ useEffect(() => {
 export default function Loading() {
   return <div>로딩중...</div>;
 }
+```
+
+---
+
+## 017 목록에서 각 글에 상세 링크 걸기
+
+- 변경 내용: [commit/017](https://github.com/zoek1211/nextjs-board-front/commit/017) · 전체 코드: [tree/017](https://github.com/zoek1211/nextjs-board-front/tree/017)
+- 강의: 17강, 목록 페이지에서 각 글에 링크걸기
+
+### 핵심 내용
+
+- 글 목록의 각 제목을 `Link` 로 감싸서 해당 글의 상세페이지(`/posts/글번호`)로 이동하게 한다.
+- `href` 에 템플릿 리터럴로 글 번호를 넣는다. 상세페이지는 16강에서 만든 `useParams()` 로 그 번호를 읽는다.
+- 목록에서 상세로 이동할 때 `Link` 는 페이지 전체를 새로고침하지 않는다. 바뀌는 페이지 부분만 교체한다.
+
+### 코드 발췌
+
+`src/app/posts/page.tsx`
+
+```tsx
+import Link from "next/link";
+
+{posts.map((post) => (
+  <li key={post.id}>
+    <Link href={`/posts/${post.id}`}>{post.title}</Link>
+  </li>
+))}
 ```
