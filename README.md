@@ -30,6 +30,7 @@ pnpm dev                     # http://localhost:3000
 - [005 글 목록 페이지(/posts) 추가](#005-글-목록-페이지posts-추가)
 - [006 사이트 공통 상단바 구현](#006-사이트-공통-상단바-구현)
 - [007 a 태그 대신 Link 사용](#007-a-태그-대신-link-사용)
+- [008 서버 컴포넌트와 클라이언트 컴포넌트](#008-서버-컴포넌트와-클라이언트-컴포넌트)
 
 ---
 
@@ -228,4 +229,40 @@ import Link from "next/link";
   <Link href="/" className="p-2 rounded hover:bg-gray-100">메인</Link>
   <Link href="/posts" className="p-2 rounded hover:bg-gray-100">글 목록</Link>
 </nav>
+```
+
+---
+
+## 008 서버 컴포넌트와 클라이언트 컴포넌트
+
+- 변경 내용: [commit/008](https://github.com/zoek1211/nextjs-board-front/commit/008) · 전체 코드: [tree/008](https://github.com/zoek1211/nextjs-board-front/tree/008)
+- 강의: 8강, Next.js의 레이아웃과 페이지 컴포넌트는 기본적으로는 서버 컴포넌트이다. `"use client";` 로 클라이언트 컴포넌트로 바꿀 수 있다.
+
+### 핵심 내용
+
+| | 서버 컴포넌트 (기본값) | 클라이언트 컴포넌트 (`"use client"`) |
+|---|---|---|
+| 실행 위치 | 서버에서만 | 서버에서 한 번(HTML 생성) + 브라우저에서 다시(hydration) |
+| `useState`, `useEffect` | 사용 불가 | 사용 가능 |
+| `onClick` 등 이벤트 | 사용 불가 | 사용 가능 |
+| 브라우저로 보내는 JS | 없음 | 컴포넌트 코드가 JS 번들에 포함 |
+
+- 파일 맨 첫 줄에 `"use client";` 를 쓰면 그 파일(과 그 파일이 import 하는 컴포넌트)이 클라이언트 컴포넌트가 된다.
+- 이 강의는 리액트의 `useState` / `useEffect` 를 그대로 활용하려고 메인과 글 목록 페이지를 클라이언트 컴포넌트로 바꿨다.
+
+### 코드 발췌
+
+`src/app/posts/page.tsx`
+
+```tsx
+"use client"; // 반드시 파일 맨 위. 이 파일을 클라이언트 컴포넌트로 만든다.
+
+export default function Page() {
+  return (
+    <>
+      <h1>글 목록</h1>
+      ...
+    </>
+  );
+}
 ```
