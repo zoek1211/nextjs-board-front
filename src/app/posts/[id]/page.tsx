@@ -1,0 +1,40 @@
+"use client"; // 상태(useState)와 useEffect 를 쓰기 위해 클라이언트 컴포넌트로
+
+import { useEffect, useState } from "react";
+
+// src/app/posts/[id]/page.tsx == "/posts/1", "/posts/2" ... 주소(글 상세페이지)
+// 폴더 이름을 [id] 처럼 대괄호로 감싸면 "동적 세그먼트"가 된다. /posts/ 뒤에 오는 어떤 값이든 이 페이지가 처리한다.
+// 단, 이번 단계에서는 URL 과 상관없이 무조건 1번 글을 보여 준다. (16강에서 URL 의 id 를 사용)
+export default function Page() {
+  // 글 하나는 객체 하나. 아직 받아오기 전에는 "없음"을 뜻하는 null 로 시작한다.
+  // 타입 = 글 객체 | null  (둘 중 하나)
+  const [post, setPost] = useState<{
+    id: number;
+    title: string;
+    content: string;
+  } | null>(null);
+
+  useEffect(() => {
+    // 글 단건조회 API: GET /api/v1/posts/{id}
+    fetch("http://localhost:8080/api/v1/posts/1")
+      .then((res) => res.json())
+      .then(setPost);
+  }, []);
+
+  return (
+    <>
+      <h1>글 상세페이지</h1>
+
+      {/* 아직 도착 전(null)이면 로딩중... */}
+      {post == null && <div>로딩중...</div>}
+
+      {/* post?.id : 옵셔널 체이닝. post 가 null 이면 에러 대신 undefined 가 되어 아무것도 안 그려진다.
+          (post.id 라고 쓰면 null 일 때 "null 의 id 를 읽을 수 없다"는 에러가 난다) */}
+      <div>번호 : {post?.id}</div>
+      <div>제목: {post?.title}</div>
+      {/* whiteSpace: "pre-line" : 본문의 줄바꿈(\n)을 화면에서도 줄바꿈으로 보여 준다.
+          JSX 의 style 은 문자열이 아니라 객체로 쓰고, CSS 속성 이름은 camelCase(white-space → whiteSpace)로 쓴다. */}
+      <div style={{ whiteSpace: "pre-line" }}>{post?.content}</div>
+    </>
+  );
+}

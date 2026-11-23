@@ -39,6 +39,7 @@ pnpm dev                     # http://localhost:3000
 - [013-3 상태 타입을 any로 느슨하게](#013-3-상태-타입을-any로-느슨하게)
 - [013-4 백엔드 글 다건조회 API fetch](#013-4-백엔드-글-다건조회-api-fetch)
 - [013-5 명시적 타입으로 되돌리고 코드 다듬기](#013-5-명시적-타입으로-되돌리고-코드-다듬기)
+- [015-1 글 상세페이지 구현(1번 글 고정)](#015-1-글-상세페이지-구현1번-글-고정)
 
 ---
 
@@ -502,4 +503,38 @@ useEffect(() => {
     .then((res) => res.json())
     .then(setPosts); // == .then((data) => setPosts(data))
 }, []);
+```
+
+---
+
+## 015-1 글 상세페이지 구현(1번 글 고정)
+
+- 변경 내용: [commit/015-1](https://github.com/zoek1211/nextjs-board-front/commit/015-1) · 전체 코드: [tree/015-1](https://github.com/zoek1211/nextjs-board-front/tree/015-1)
+- 강의: 15강, 상세페이지 구현, 일단은 무조건 URL에 상관없이 1번글이 노출
+
+### 핵심 내용
+
+- `src/app/posts/[id]/page.tsx`: 폴더 이름을 **`[id]`** 처럼 대괄호로 감싸면 **동적 세그먼트**가 된다. `/posts/1`, `/posts/2` ... 모두 이 페이지 하나가 처리한다.
+- 이번 단계에서는 URL 과 상관없이 `GET /api/v1/posts/1` 로 1번 글만 불러온다.
+- 글 하나는 객체이므로 상태의 초기값은 "없음"을 뜻하는 **`null`** 이다. 타입은 `글 | null`.
+- `post?.id`: **옵셔널 체이닝**. `post` 가 `null` 이면 에러 없이 `undefined` 가 된다.
+- `style={{ whiteSpace: "pre-line" }}`: 본문의 줄바꿈을 화면에도 반영한다. JSX 의 `style` 은 객체로 쓰고 속성 이름은 camelCase 다.
+
+### 코드 발췌
+
+`src/app/posts/[id]/page.tsx`
+
+```tsx
+const [post, setPost] = useState<{ id: number; title: string; content: string } | null>(null);
+
+useEffect(() => {
+  fetch("http://localhost:8080/api/v1/posts/1")   // 일단 1번 글 고정
+    .then((res) => res.json())
+    .then(setPost);
+}, []);
+
+{post == null && <div>로딩중...</div>}
+<div>번호 : {post?.id}</div>
+<div>제목: {post?.title}</div>
+<div style={{ whiteSpace: "pre-line" }}>{post?.content}</div>
 ```
