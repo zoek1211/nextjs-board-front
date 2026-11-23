@@ -47,6 +47,7 @@ pnpm dev                     # http://localhost:3000
 - [019-1 PostDto 타입 정의](#019-1-postdto-타입-정의)
 - [019-2 PostWithContentDto 타입 분리](#019-2-postwithcontentdto-타입-분리)
 - [019-3 type 대신 interface로 정의해 보기](#019-3-type-대신-interface로-정의해-보기)
+- [019-4 다시 type으로 통일](#019-4-다시-type으로-통일)
 
 ---
 
@@ -770,6 +771,36 @@ export interface PostDto {
 export interface PostWithContentDto {
   id: number;
   title: string;
+  content: string;
+};
+```
+
+---
+
+## 019-4 다시 type으로 통일
+
+- 변경 내용: [commit/019-4](https://github.com/zoek1211/nextjs-board-front/commit/019-4) · 전체 코드: [tree/019-4](https://github.com/zoek1211/nextjs-board-front/tree/019-4)
+- 강의: 19강 (4단계: 다시 type 으로 통일)
+
+### 핵심 내용
+
+- `interface` 를 다시 `type` 으로 되돌린다.
+- `type` 은 유니온(`A | B`), 교차(`A & B`), 유틸리티 타입(`Omit` 등)까지 한 가지 문법으로 다룰 수 있다. 그래서 이 프로젝트에서는 `type` 으로 통일한다.
+- 아직 `PostDto` 와 `PostWithContentDto` 에 `id`, `title` 이 **중복**되어 있다. 다음 단계에서 이 중복을 없앤다.
+
+### 코드 발췌
+
+`src/type/post.ts`
+
+```ts
+export type PostDto = {
+  id: number;
+  title: string;
+};
+
+export type PostWithContentDto = {
+  id: number;      // ← PostDto 와 중복
+  title: string;   // ← PostDto 와 중복
   content: string;
 };
 ```
