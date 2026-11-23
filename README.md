@@ -48,6 +48,7 @@ pnpm dev                     # http://localhost:3000
 - [019-2 PostWithContentDto 타입 분리](#019-2-postwithcontentdto-타입-분리)
 - [019-3 type 대신 interface로 정의해 보기](#019-3-type-대신-interface로-정의해-보기)
 - [019-4 다시 type으로 통일](#019-4-다시-type으로-통일)
+- [019-5 Omit으로 타입 중복 제거](#019-5-omit으로-타입-중복-제거)
 
 ---
 
@@ -803,4 +804,32 @@ export type PostWithContentDto = {
   title: string;   // ← PostDto 와 중복
   content: string;
 };
+```
+
+---
+
+## 019-5 Omit으로 타입 중복 제거
+
+- 변경 내용: [commit/019-5](https://github.com/zoek1211/nextjs-board-front/commit/019-5) · 전체 코드: [tree/019-5](https://github.com/zoek1211/nextjs-board-front/tree/019-5)
+- 강의: 19강 (5단계: Omit 으로 중복 제거)
+
+### 핵심 내용
+
+- `id`, `title` 중복을 없애는 첫 번째 방법: **큰 타입에서 필드를 빼서** 작은 타입을 만든다.
+- **`Omit<타입, "필드">`** 는 TypeScript 내장 유틸리티 타입으로, 지정한 필드를 뺀 새 타입을 만든다.
+- 이제 `PostWithContentDto` 에 필드를 추가하면 `PostDto` 에도 자동으로 반영된다.
+
+### 코드 발췌
+
+`src/type/post.ts`
+
+```ts
+export type PostWithContentDto = {
+  id: number;
+  title: string;
+  content: string;
+};
+
+// content 를 뺀 { id: number; title: string }
+export type PostDto = Omit<PostWithContentDto, "content">;
 ```
