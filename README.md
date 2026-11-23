@@ -32,6 +32,7 @@ pnpm dev                     # http://localhost:3000
 - [007 a 태그 대신 Link 사용](#007-a-태그-대신-link-사용)
 - [008 서버 컴포넌트와 클라이언트 컴포넌트](#008-서버-컴포넌트와-클라이언트-컴포넌트)
 - [010 body의 외연과 배경색](#010-body의-외연과-배경색)
+- [011 flex-grow로 푸터를 화면 최하단에 배치](#011-flex-grow로-푸터를-화면-최하단에-배치)
 
 ---
 
@@ -300,4 +301,31 @@ export default function Page() {
   :root { --background: #0a0a0a; --foreground: #ededed; }
 }
 */
+```
+
+---
+
+## 011 flex-grow로 푸터를 화면 최하단에 배치
+
+- 변경 내용: [commit/011](https://github.com/zoek1211/nextjs-board-front/commit/011) · 전체 코드: [tree/011](https://github.com/zoek1211/nextjs-board-front/tree/011)
+- 강의: 11강, flex-item 요소는 flex-grow(성장성)가 기본적으로는 0 입니다, 레이아웃 배치 작업: 푸터를 화면 최하단으로
+
+### 핵심 내용
+
+- 구역마다 색 테두리(header 노랑, main 초록, footer 빨강)를 그려서 각 영역의 크기를 눈으로 확인하며 작업한다.
+- `min-h-screen`: body 의 최소 높이를 화면 높이로 만든다. 이제 body 가 실제로 화면을 꽉 채운다.
+- flex 컨테이너의 자식(flex-item)은 `flex-grow` 가 기본 **0** 이라서 내용만큼만 커진다.
+- `main` 에 `flex-grow` 를 주면 남는 세로 공간을 `main` 이 모두 가져가고, 그 결과 `footer` 가 화면 맨 아래로 밀려난다.
+
+### 코드 발췌
+
+`src/app/layout.tsx`
+
+```tsx
+<body className="flex flex-col min-h-screen border-2 border-blue-500">
+  <header className="border-6 border-yellow-500">...</header>
+  {/* 남는 공간을 전부 차지 → footer 는 맨 아래 */}
+  <main className="flex-grow border-6 border-green-500">{children}</main>
+  <footer className="border-6 border-red-500">푸터</footer>
+</body>
 ```
