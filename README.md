@@ -35,6 +35,7 @@ pnpm dev                     # http://localhost:3000
 - [011 flex-grow로 푸터를 화면 최하단에 배치](#011-flex-grow로-푸터를-화면-최하단에-배치)
 - [012 메인화면 텍스트 가운데 정렬](#012-메인화면-텍스트-가운데-정렬)
 - [013-1 글 목록을 배열 데이터로 렌더링](#013-1-글-목록을-배열-데이터로-렌더링)
+- [013-2 글 목록 데이터를 상태로 만들기](#013-2-글-목록-데이터를-상태로-만들기)
 
 ---
 
@@ -397,4 +398,33 @@ const posts = [
     <li key={post.id}>{post.title}</li>   // key: 고유한 값
   ))}
 </ul>
+```
+
+---
+
+## 013-2 글 목록 데이터를 상태로 만들기
+
+- 변경 내용: [commit/013-2](https://github.com/zoek1211/nextjs-board-front/commit/013-2) · 전체 코드: [tree/013-2](https://github.com/zoek1211/nextjs-board-front/tree/013-2)
+- 강의: 13강 (2단계: 데이터를 상태로 만들고 useEffect 에서 채우기)
+
+### 핵심 내용
+
+- 일반 변수는 값을 바꿔도 화면이 다시 그려지지 않는다. **`useState` 로 만든 상태**를 `setPosts` 로 바꿔야 리액트가 컴포넌트를 다시 실행해서 화면을 갱신한다.
+- 상태는 빈 배열(`[]`)로 시작하고, 데이터가 "나중에" 도착하면 채운다.
+- **`useEffect(() => { ... }, [])`**: 렌더링이 끝난 뒤에 실행된다. 의존성 배열이 비어 있으면 처음 마운트될 때 한 번만 실행된다. 데이터 불러오기처럼 렌더링과 별개인 작업(부수 효과)을 여기에 둔다.
+- 아직 진짜 서버는 부르지 않고 `setTimeout` 으로 "잠시 뒤에 데이터 도착"을 흉내낸다. 리턴한 정리 함수(`clearTimeout`)는 컴포넌트가 사라질 때 타이머를 취소한다.
+
+### 코드 발췌
+
+```tsx
+const [posts, setPosts] = useState<{ id: number; title: string }[]>([]);
+
+useEffect(() => {
+  const timer = setTimeout(() => setPosts([
+    { id: 1, title: "명언 1" },
+    { id: 2, title: "명언 2" },
+    { id: 3, title: "명언 3" },
+  ]), 0);
+  return () => clearTimeout(timer); // 정리 함수
+}, []); // [] → 처음 한 번만
 ```
