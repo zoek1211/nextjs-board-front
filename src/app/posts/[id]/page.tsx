@@ -28,13 +28,18 @@ export default function Page() {
       {/* 아직 도착 전(null)이면 로딩중... */}
       {post == null && <div>로딩중...</div>}
 
-      {/* post?.id : 옵셔널 체이닝. post 가 null 이면 에러 대신 undefined 가 되어 아무것도 안 그려진다.
-          (post.id 라고 쓰면 null 일 때 "null 의 id 를 읽을 수 없다"는 에러가 난다) */}
-      <div>번호 : {post?.id}</div>
-      <div>제목: {post?.title}</div>
-      {/* whiteSpace: "pre-line" : 본문의 줄바꿈(\n)을 화면에서도 줄바꿈으로 보여 준다.
-          JSX 의 style 은 문자열이 아니라 객체로 쓰고, CSS 속성 이름은 camelCase(white-space → whiteSpace)로 쓴다. */}
-      <div style={{ whiteSpace: "pre-line" }}>{post?.content}</div>
+      {/* post 가 있을 때만 상세 내용을 통째로 그린다.
+          이 블록 안에서는 TypeScript 가 post 를 null 이 아닌 것으로 확신하므로(타입 좁히기)
+          post?.id 대신 post.id 처럼 ?. 없이 깔끔하게 쓸 수 있다. */}
+      {post != null && (
+        <>
+          <div>번호 : {post.id}</div>
+          <div>제목: {post.title}</div>
+          {/* whiteSpace: "pre-line" : 본문의 줄바꿈(\n)을 화면에서도 줄바꿈으로 보여 준다.
+              JSX 의 style 은 객체로 쓰고, CSS 속성 이름은 camelCase(white-space → whiteSpace)로 쓴다. */}
+          <div style={{ whiteSpace: "pre-line" }}>{post.content}</div>
+        </>
+      )}
     </>
   );
 }

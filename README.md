@@ -40,6 +40,7 @@ pnpm dev                     # http://localhost:3000
 - [013-4 백엔드 글 다건조회 API fetch](#013-4-백엔드-글-다건조회-api-fetch)
 - [013-5 명시적 타입으로 되돌리고 코드 다듬기](#013-5-명시적-타입으로-되돌리고-코드-다듬기)
 - [015-1 글 상세페이지 구현(1번 글 고정)](#015-1-글-상세페이지-구현1번-글-고정)
+- [015-2 post가 있을 때만 상세 내용 렌더링](#015-2-post가-있을-때만-상세-내용-렌더링)
 
 ---
 
@@ -537,4 +538,31 @@ useEffect(() => {
 <div>번호 : {post?.id}</div>
 <div>제목: {post?.title}</div>
 <div style={{ whiteSpace: "pre-line" }}>{post?.content}</div>
+```
+
+---
+
+## 015-2 post가 있을 때만 상세 내용 렌더링
+
+- 변경 내용: [commit/015-2](https://github.com/zoek1211/nextjs-board-front/commit/015-2) · 전체 코드: [tree/015-2](https://github.com/zoek1211/nextjs-board-front/tree/015-2)
+- 강의: 15강 (2단계: post 가 있을 때만 상세 내용 렌더링)
+
+### 핵심 내용
+
+- `post?.id` 를 여러 번 쓰는 대신, **`post != null && ( ... )`** 블록으로 감싸서 글이 있을 때만 상세 내용을 통째로 그린다.
+- 그 블록 안에서는 TypeScript 가 `post` 가 `null` 이 아니라고 판단한다 (**타입 좁히기**). 그래서 `?.` 없이 `post.id` 로 쓸 수 있다.
+- 로딩 중일 때 "번호 : " 같은 빈 라벨이 보이던 문제도 함께 사라진다.
+
+### 코드 발췌
+
+```tsx
+{post == null && <div>로딩중...</div>}
+
+{post != null && (
+  <>
+    <div>번호 : {post.id}</div>      {/* ?. 불필요 */}
+    <div>제목: {post.title}</div>
+    <div style={{ whiteSpace: "pre-line" }}>{post.content}</div>
+  </>
+)}
 ```
