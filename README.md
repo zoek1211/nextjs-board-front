@@ -93,6 +93,7 @@ pnpm dev                     # http://localhost:3000
 - [049-1 modifyMode 상태로 댓글 내용 보이기 숨기기](#049-1-modifymode-상태로-댓글-내용-보이기-숨기기)
 - [049-2 수정 모드에서 댓글 수정 폼 표시, submit은 일단 막기](#049-2-수정-모드에서-댓글-수정-폼-표시-submit은-일단-막기)
 - [050-1 댓글 수정 폼 체크 후 수정 API 호출](#050-1-댓글-수정-폼-체크-후-수정-api-호출)
+- [050-2 수정 성공 시 렌더링된 댓글 내용 갱신](#050-2-수정-성공-시-렌더링된-댓글-내용-갱신)
 
 ---
 
@@ -2795,4 +2796,51 @@ const handleSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
   <textarea ... defaultValue={comment.content} autoFocus />
   <button className="p-2 rounded border" type="submit">수정</button>
 </form>
+```
+
+---
+
+## 050-2 수정 성공 시 렌더링된 댓글 내용 갱신
+
+- 변경 내용: [commit/050-2](https://github.com/zoek1211/nextjs-board-front/commit/050-2) · 전체 코드: [tree/050-2](https://github.com/zoek1211/nextjs-board-front/tree/050-2)
+- 강의: 50강 (2단계: 수정 API 호출 성공 시 이미 렌더링된 기존 댓글 내용을 수정)
+
+### 핵심 내용
+
+- 050-1 에서는 서버만 수정되고 화면은 그대로였다. 수정이 성공하면 **`postComments` 상태도 바꾼다.**
+- 상태를 바꾸는 방법은 삭제/작성 때와 같은 원칙이다. **기존 배열을 고치지 않고 새 배열을 만든다.**
+  - 삭제(33강): `filter` 로 빼고
+  - 작성(34강): 스프레드 `[...postComments, 새댓글]` 로 붙이고
+  - 수정(50강): **`map`** 으로 해당 댓글만 바꾼다.
+- `comment.id === commentId ? { ...comment, content } : comment`
+  - 수정한 댓글만 `{ ...comment, content }` 로 바꾸고, 나머지는 그대로 둔다.
+  - `{ ...comment, content }`: 기존 댓글 객체를 펼쳐 복사하고 `content` 만 새 값으로 덮어쓴 **새 객체**다. `comment.content = ...` 처럼 객체를 직접 고치면 리액트가 변경을 알아채지 못한다.
+- 이 상태 변경도 훅(`usePostComments`) 안에서 일어난다. 상태를 바꾸는 길이 훅 한곳에 모여 있다(39강).
+- 브라우저에서 확인한 결과(1번 글의 6번 댓글): `050-2 바로 반영` 으로 수정 → "6번 댓글이 수정되었습니다." → 새로고침 없이 화면에 바로 `050-2 바로 반영` 이 보이고, 1번 댓글은 그대로. API 조회 결과도 같다.
+
+### 코드 발췌
+
+`src/app/posts/[id]/page.tsx` (usePostComments)
+
+```tsx
+const modifyComment = (
+  commentId: number,
+  content: string,
+  onSuccess: (data: { msg: string }) => void
+) => {
+  apiFetch(`/api/v1/posts/${postId}/comments/${commentId}`, {
+    method: "PUT",
+    body: JSON.stringify({ content }),
+  }).then((data) => {
+    if (postComments == null) return;
+
+    setPostComments(
+      postComments.map((comment) =>
+        comment.id === commentId ? { ...comment, content } : comment
+      )
+    );
+
+    onSuccess(data);
+  });
+};
 ```

@@ -140,7 +140,8 @@ function usePostComments(postId: number) {
   // 댓글 수정 API: PUT /api/v1/posts/{글번호}/comments/{댓글번호} (050-1)
   // 글 수정(29강)과 마찬가지로 PUT 으로 바꿀 내용을 보낸다. 본문은 { "content": "..." }
   // 글 번호(postId)는 deleteComment, writeComment 처럼 클로저로 기억하는 값을 쓴다.
-  // 050-1 : 아직 postComments 상태를 바꾸지 않는다. 서버에서만 수정되고, 화면의 기존 댓글 내용은 그대로다. (050-2 에서 해결)
+  // 050-1 에서는 postComments 상태를 바꾸지 않아서, 서버에서만 수정되고 화면의 기존 댓글 내용은 그대로였다.
+  // 050-2 : 수정이 성공하면 상태도 바꿔서 이미 렌더링된 댓글 내용을 갱신한다. (삭제/작성과 같은 방식)
   const modifyComment = (
     commentId: number,
     content: string,
@@ -149,7 +150,22 @@ function usePostComments(postId: number) {
     apiFetch(`/api/v1/posts/${postId}/comments/${commentId}`, {
       method: "PUT",
       body: JSON.stringify({ content }),
-    }).then(onSuccess);
+    }).then((data) => {
+      // 타입 좁히기용 가드: 댓글 목록이 없을 때는 할 일이 없다.
+      if (postComments == null) return;
+
+      // map : 각 원소를 바꾼 "새 배열"을 만든다. (삭제의 filter, 작성의 스프레드와 마찬가지로 기존 배열을 직접 고치지 않는다)
+      //   수정한 댓글(comment.id === commentId)만 { ...comment, content } 로 바꾸고, 나머지는 그대로 둔다.
+      //   { ...comment, content } : 기존 댓글 객체를 펼쳐서 복사하고 content 만 새 값으로 덮어쓴 "새 객체"
+      //     → 객체도 직접 고치지(comment.content = ...) 않고 새로 만들어야 리액트가 변경을 알아챈다.
+      setPostComments(
+        postComments.map((comment) =>
+          comment.id === commentId ? { ...comment, content } : comment
+        )
+      );
+
+      onSuccess(data);
+    });
   };
 
   // setPostComments 는 밖으로 내보내지 않는다.
