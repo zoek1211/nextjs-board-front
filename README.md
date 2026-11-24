@@ -1,6 +1,6 @@
 # nextjs-board-front
 
-슬로그 강의 **[스프링부트, Next.js REST API 연동](https://www.slog.gg/p/14175)** 1~35강을 따라 만든 Next.js + TypeScript 게시판 프론트엔드입니다.
+슬로그 강의 **[스프링부트, Next.js REST API 연동](https://www.slog.gg/p/14175)** 1~36강을 따라 만든 Next.js + TypeScript 게시판 프론트엔드입니다.
 
 - 백엔드: [jhs512/p-14172-2 (tag 068)](https://github.com/jhs512/p-14172-2/tree/068)
 - 강의 정답 리포: [jhs512/p-14175-3](https://github.com/jhs512/p-14175-3)
@@ -71,6 +71,7 @@ pnpm dev                     # http://localhost:3000
 - [034-1 댓글 작성 폼과 작성 API 호출](#034-1-댓글-작성-폼과-작성-api-호출)
 - [034-2 작성한 댓글을 목록에 바로 반영](#034-2-작성한-댓글을-목록에-바로-반영)
 - [035 유효성 체크를 세밀하게](#035-유효성-체크를-세밀하게)
+- [036-1 프로미스 체인에 catch 추가 (HTTP 에러는 catch로 가지 않음)](#036-1-프로미스-체인에-catch-추가-http-에러는-catch로-가지-않음)
 
 ---
 
@@ -1682,4 +1683,31 @@ if (contentTextarea.value.length < 2) {
 // ...
 
 <textarea className="border p-2 rounded" name="content" placeholder="댓글 내용" maxLength={100} rows={5} />
+```
+
+---
+
+## 036-1 프로미스 체인에 catch 추가 (HTTP 에러는 catch로 가지 않음)
+
+- 변경 내용: [commit/036-1](https://github.com/zoek1211/nextjs-board-front/commit/036-1) · 전체 코드: [tree/036-1](https://github.com/zoek1211/nextjs-board-front/tree/036-1)
+- 강의: 36강, 프로미스 체인의 예외 처리 (1단계: catch 추가, HTTP 에러에서는 실행되지 않음)
+
+### 핵심 내용
+
+- 프로미스 체인(`.then().then().catch()`)에서 중간에 예외가 나면 **남은 `then` 은 건너뛰고 `catch` 로 바로 간다.**
+- 글 상세페이지의 두 조회(글, 댓글 목록)에 `.catch` 를 달았다.
+- 하지만 **`fetch` 는 HTTP 4xx/5xx 응답을 실패로 보지 않는다.** 서버가 응답을 돌려주기만 하면 성공이다. 네트워크가 끊기는 등 응답 자체를 못 받을 때만 `catch` 로 간다.
+- 브라우저에서 확인한 결과: 없는 글 `/posts/999999` 를 열면 백엔드는 `404` 와 `{"resultCode":"404-1","msg":"해당 데이터가 존재하지 않습니다."}` 를 돌려주지만, `catch` 는 실행되지 않는다. 오히려 이 에러 응답이 `setPost` 로 들어가서 번호/제목이 빈 상세페이지가 그려진다.
+- 그래서 다음 단계(036-2)에서 응답 코드를 보고 직접 예외를 던진다.
+
+### 코드 발췌
+
+`src/app/posts/[id]/page.tsx`
+
+```tsx
+apiFetch(`/api/v1/posts/${id}`)
+  .then(setPost)
+  .catch((error) => {
+    alert(error.message);   // 404 응답에서는 실행되지 않는다!
+  });
 ```

@@ -121,12 +121,22 @@ export default function Page() {
     // 글 단건조회 API: GET /api/v1/posts/{id}
     // 백틱(`) 템플릿 리터럴로 URL 에 id 를 끼워 넣는다.
     apiFetch(`/api/v1/posts/${id}`)
-      .then(setPost);
+      .then(setPost)
+      // 프로미스 체인 중간(then)에서 예외가 나면 남은 then 은 건너뛰고 catch 로 바로 온다.
+      // 주의: fetch 는 "응답을 받기만 하면" 성공으로 본다. 404, 500 같은 HTTP 에러 응답도 성공이다.
+      //       그래서 없는 글(/posts/999999)을 열어도 이 catch 는 실행되지 않는다. (네트워크 끊김 같은 경우에만 실행)
+      //       → HTTP 에러도 catch 로 보내려면 체인 앞부분에서 직접 예외를 던져야 한다. (036-2)
+      .catch((error) => {
+        alert(error.message);
+      });
 
     // 댓글 다건조회 API: GET /api/v1/posts/{id}/comments
     // 글 조회와 댓글 조회는 서로 기다릴 필요가 없으므로 동시에 요청한다. (먼저 도착한 쪽부터 화면에 반영)
     apiFetch(`/api/v1/posts/${id}/comments`)
-      .then(setPostComments);
+      .then(setPostComments)
+      .catch((error) => {
+        alert(error.message);
+      });
     // 의존성 배열에 id 를 넣었다. → id 가 바뀌면(다른 글로 이동하면) 이 effect 가 다시 실행되어 새 글을 불러온다.
   }, [id]);
 
