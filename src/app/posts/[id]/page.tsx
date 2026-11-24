@@ -156,7 +156,10 @@ function usePostComments(id: number) {
 function PostInfo({ postState }: { postState: ReturnType<typeof usePost> }) {
   // 훅(useRouter)은 그것을 쓰는 컴포넌트 안에서 호출한다. 삭제 후 이동이 여기서 일어나므로 이 컴포넌트에 둔다.
   const router = useRouter();
-  const { post, deletePost } = postState;
+  // deletePost: _deletePost : 훅의 deletePost 를 _deletePost 라는 이름으로 받는다. (40강의 구조분해 이름 바꾸기)
+  //   이 컴포넌트에서 같은 이름(deletePost)의 함수를 새로 만들기 위해서다. (043)
+  //   앞의 _ 는 "원본/내부용"이라는 뜻으로 흔히 붙이는 관례일 뿐, 문법적인 의미는 없다.
+  const { post, deletePost: _deletePost } = postState;
 
   // 가드 클로즈(guard clause) 패턴: (041 에서 Page 에서 이 컴포넌트로 옮겨 옴)
   // "아직 준비가 안 된 경우"를 함수 앞부분에서 먼저 처리하고 바로 return 해 버린다.
@@ -164,6 +167,25 @@ function PostInfo({ postState }: { postState: ReturnType<typeof usePost> }) {
   // → JSX 안에서 post == null && ..., post != null && (...) 로 두 번 나눠 쓸 필요가 없어진다.
   // 주의: 훅(useRouter)은 이 return 보다 위에서 호출해야 한다. 훅은 매번 같은 순서로 호출되어야 하기 때문이다.
   if (post == null) return <div>로딩중...</div>;
+
+  // 하위 컴포넌트에서 재정의한 deletePost (043)
+  // JSX 의 onClick 안에 길게 쓰던 스크립트(confirm + 삭제 호출 + 성공 후 이동)를 JSX 밖의 함수로 옮겼다.
+  // → JSX 는 "무엇을 그릴지"만 보이게 짧아지고, 로직은 이름 있는 함수로 읽기 쉬워진다.
+  // 가드 클로즈 아래에 있으므로 post 는 null 이 아니다. → post.id 를 바로 쓸 수 있고, 인자로 받을 필요도 없다.
+  const deletePost = () => {
+    // confirm(...) : 확인/취소 창을 띄우고, 확인이면 true, 취소면 false 를 돌려준다.
+    // 취소면 바로 return (가드 클로즈). → 확인을 눌렀을 때만 삭제한다.
+    // 실수로 버튼을 눌러도 바로 지워지지 않게 하는 안전장치.
+    if (!confirm(`${post.id}번 글을 정말로 삭제하시겠습니까?`)) return;
+
+    // 두 번째 인자 = 삭제 성공 후 실행할 함수(onSuccess).
+    // 삭제된 글의 상세페이지는 더 이상 의미가 없으므로 목록으로 이동한다.
+    // replace : 방문 기록에서 지금 페이지를 교체 → 뒤로가기로 삭제된 글 페이지에 다시 오지 않는다.
+    // (onSuccess 가 응답 data 를 쓰지 않으므로, 이전에 띄우던 "1번 글이 삭제되었습니다." alert 는 이제 없다)
+    _deletePost(post.id, () => {
+      router.replace("/posts");
+    });
+  };
 
   return (
     <>
@@ -176,25 +198,11 @@ function PostInfo({ postState }: { postState: ReturnType<typeof usePost> }) {
       {/* 삭제/수정 버튼. flex gap-2 : 가로로 나란히, 사이 간격 */}
       <div className="flex gap-2">
         {/* onClick 에는 "함수"를 넘겨야 한다.
-            onClick={deletePost(post.id)} 라고 쓰면 렌더링할 때 바로 삭제가 실행돼 버린다!
-            () => deletePost(post.id) 처럼 화살표 함수로 감싸서 "클릭했을 때 실행할 함수"를 넘긴다. */}
+            onClick={deletePost()} 라고 쓰면 렌더링할 때 바로 삭제가 실행돼 버린다!
+            onClick={deletePost} 는 괄호 없이 함수 자체를 넘긴다. → "클릭했을 때 실행할 함수"
+            (042 까지는 인자가 필요해서 () => deletePost(post.id, ...) 처럼 화살표 함수로 감쌌다) */}
         {/* cursor-pointer : 마우스를 올리면 손가락 모양 (button 은 기본이 화살표) */}
-        {/* confirm(...) : 확인/취소 창을 띄우고, 확인이면 true, 취소면 false 를 돌려준다.
-            A && B : A 가 true 일 때만 B 를 실행한다(단락 평가). → 확인을 눌렀을 때만 삭제한다.
-            실수로 버튼을 눌러도 바로 지워지지 않게 하는 안전장치. */}
-        {/* deletePost 의 두 번째 인자 = 삭제 성공 후 실행할 함수(onSuccess).
-            삭제된 글의 상세페이지는 더 이상 의미가 없으므로 목록으로 이동한다.
-            replace : 방문 기록에서 지금 페이지를 교체 → 뒤로가기로 삭제된 글 페이지에 다시 오지 않는다.
-            (onSuccess 가 응답 data 를 쓰지 않으므로, 이전에 띄우던 "1번 글이 삭제되었습니다." alert 는 이제 없다) */}
-        <button
-          className="p-2 rounded border cursor-pointer"
-          onClick={() =>
-            confirm(`${post.id}번 글을 정말로 삭제하시겠습니까?`) &&
-            deletePost(post.id, () => {
-              router.replace("/posts");
-            })
-          }
-        >
+        <button className="p-2 rounded border cursor-pointer" onClick={deletePost}>
           삭제
         </button>
         {/* 수정 페이지(/posts/글번호/edit)로 이동. 수정 페이지는 28강에서 만든다. */}
@@ -223,12 +231,30 @@ function PostCommentWriteAndList({
   id: number;
   postCommentsState: ReturnType<typeof usePostComments>;
 }) {
-  const { postComments, deleteComment, writeComment } = postCommentsState;
+  // deleteComment 는 _deleteComment 로 이름을 바꿔 받고, 아래에서 같은 이름의 함수를 새로 만든다. (043, PostInfo 와 같은 방식)
+  const {
+    postComments,
+    deleteComment: _deleteComment,
+    writeComment,
+  } = postCommentsState;
 
   // 댓글 목록을 아직 불러오는 중이면 댓글 영역 전체 대신 로딩 표시만 그린다. (041)
   // 이 아래에서는 postComments 가 null 이 아니다.
   // (그래서 JSX 의 "postComments == null → 댓글 로딩중..." 갈래는 사실상 실행되지 않는다. 정답 코드 그대로 둔다)
   if (postComments == null) return <div>로딩중...</div>;
+
+  // 하위 컴포넌트에서 재정의한 deleteComment (043)
+  // JSX 의 onClick 에 있던 confirm + 삭제 호출 + 성공 후 alert 를 JSX 밖으로 옮겼다.
+  // 이 컴포넌트는 이미 글 번호(id)를 알고 있으므로, 쓰는 쪽에서는 댓글 번호만 넘기면 된다.
+  const deleteComment = (commentId: number) => {
+    // 글 삭제와 같은 패턴: 취소하면 바로 return, 확인했을 때만 삭제한다.
+    if (!confirm(`${commentId}번 댓글을 정말로 삭제하시겠습니까?`)) return;
+
+    // 세 번째 인자 = 삭제 성공 후 실행할 함수. "1번 댓글이 삭제되었습니다." alert
+    _deleteComment(id, commentId, (data) => {
+      alert(data.msg);
+    });
+  };
 
   // 댓글 작성 폼 제출 처리. 글쓰기 폼(22~25강)과 같은 패턴이다.
   const handleCommentWriteFormSubmit = (
@@ -309,16 +335,11 @@ function PostCommentWriteAndList({
             <li key={comment.id} className="py-2">
               {comment.content}
               {/* ml-2 : 왼쪽 바깥 여백(댓글 내용과 간격)
-                  글 삭제와 같은 패턴: confirm 이 true 일 때만 && 뒤의 deleteComment 실행
-                  세 번째 인자 = 삭제 성공 후 실행할 함수. "1번 댓글이 삭제되었습니다." alert */}
+                  댓글마다 번호가 다르므로 여기서는 화살표 함수로 감싸서 comment.id 를 넘긴다.
+                  (043 이전에는 confirm, 삭제 호출, alert 가 모두 이 onClick 안에 있었다) */}
               <button
                 className="ml-2 p-2 rounded border"
-                onClick={() =>
-                  confirm(`${comment.id}번 댓글을 정말로 삭제하시겠습니까?`) &&
-                  deleteComment(id, comment.id, (data) => {
-                    alert(data.msg);
-                  })
-                }
+                onClick={() => deleteComment(comment.id)}
               >
                 삭제
               </button>

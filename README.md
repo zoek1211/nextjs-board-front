@@ -1,6 +1,6 @@
 # nextjs-board-front
 
-슬로그 강의 **[스프링부트, Next.js REST API 연동](https://www.slog.gg/p/14175)** 1~42강을 따라 만든 Next.js + TypeScript 게시판 프론트엔드입니다.
+슬로그 강의 **[스프링부트, Next.js REST API 연동](https://www.slog.gg/p/14175)** 1~43강을 따라 만든 Next.js + TypeScript 게시판 프론트엔드입니다.
 
 - 백엔드: [jhs512/p-14172-2 (tag 068)](https://github.com/jhs512/p-14172-2/tree/068)
 - 강의 정답 리포: [jhs512/p-14175-3](https://github.com/jhs512/p-14175-3)
@@ -82,6 +82,7 @@ pnpm dev                     # http://localhost:3000
 - [040 path 파라미터는 항상 문자열, 구조분해할당에서 변수 이름 바꾸기](#040-path-파라미터는-항상-문자열-구조분해할당에서-변수-이름-바꾸기)
 - [041 커스텀 훅 결과를 구조분해하지 않고 통째로 하위 컴포넌트에 전달](#041-커스텀-훅-결과를-구조분해하지-않고-통째로-하위-컴포넌트에-전달)
 - [042 ReturnType으로 하위 컴포넌트 props 타입 하드코딩 없애기](#042-returntype으로-하위-컴포넌트-props-타입-하드코딩-없애기)
+- [043 하위 컴포넌트에서 deletePost, deleteComment 재정의](#043-하위-컴포넌트에서-deletepost-deletecomment-재정의)
 
 ---
 
@@ -2219,4 +2220,57 @@ function PostCommentWriteAndList({
 }) {
   // ...
 }
+```
+
+---
+
+## 043 하위 컴포넌트에서 deletePost, deleteComment 재정의
+
+- 변경 내용: [commit/043](https://github.com/zoek1211/nextjs-board-front/commit/043) · 전체 코드: [tree/043](https://github.com/zoek1211/nextjs-board-front/tree/043)
+- 강의: 43강, deletePost, deleteComment 라는 이름의 함수를 하위 컴포넌트에서 재정의하여 리팩토링
+
+### 핵심 내용
+
+- 042 까지는 삭제 버튼의 `onClick` 안에 **confirm + 삭제 호출 + 성공 후 처리**가 모두 들어 있었다. JSX 안의 스크립트가 너무 길다.
+- **JSX 밖으로 옮긴다.** 하위 컴포넌트 안에서 같은 이름의 함수(`deletePost`, `deleteComment`)를 새로 만든다.
+  - 훅의 원본 함수와 이름이 겹치므로, 구조분해할 때 원본을 **`_deletePost`, `_deleteComment`** 로 이름을 바꿔 받는다(40강의 `{ 속성: 새이름 }`).
+  - `_` 는 "원본/내부용"이라는 뜻으로 흔히 붙이는 관례일 뿐 문법적 의미는 없다.
+- confirm 처리도 `A && B` 대신 **`if (!confirm(...)) return;`** 가드 클로즈로 바꿨다. 취소하면 바로 끝난다.
+- 재정의한 함수는 **필요한 인자가 줄었다.**
+  - `PostInfo` 의 `deletePost()`: 가드 클로즈 아래에서 만들었으므로 `post.id` 를 바로 쓴다. 인자가 없다. → `onClick={deletePost}` 처럼 함수 자체를 넘긴다(괄호를 붙이면 렌더링할 때 바로 실행된다).
+  - 댓글 영역의 `deleteComment(commentId)`: 글 번호 `id` 는 이미 props 로 알고 있으므로 댓글 번호만 받는다. 댓글마다 번호가 다르므로 `onClick={() => deleteComment(comment.id)}`.
+- 브라우저에서 확인한 결과: 댓글 삭제 confirm 에서 취소하면 목록과 서버 모두 그대로, 확인하면 삭제 + alert. 글 삭제 후 `/posts` 이동.
+
+### 코드 발췌
+
+`src/app/posts/[id]/page.tsx`
+
+```tsx
+// PostInfo
+const { post, deletePost: _deletePost } = postState;
+
+if (post == null) return <div>로딩중...</div>;
+
+const deletePost = () => {
+  if (!confirm(`${post.id}번 글을 정말로 삭제하시겠습니까?`)) return;
+
+  _deletePost(post.id, () => {
+    router.replace("/posts");
+  });
+};
+
+<button className="p-2 rounded border cursor-pointer" onClick={deletePost}>삭제</button>
+
+// PostCommentWriteAndList
+const { postComments, deleteComment: _deleteComment, writeComment } = postCommentsState;
+
+const deleteComment = (commentId: number) => {
+  if (!confirm(`${commentId}번 댓글을 정말로 삭제하시겠습니까?`)) return;
+
+  _deleteComment(id, commentId, (data) => {
+    alert(data.msg);
+  });
+};
+
+<button className="ml-2 p-2 rounded border" onClick={() => deleteComment(comment.id)}>삭제</button>
 ```
