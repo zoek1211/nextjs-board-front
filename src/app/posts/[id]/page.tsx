@@ -10,6 +10,60 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+// 글 정보(번호, 제목, 본문) + 삭제/수정 버튼을 담당하는 컴포넌트 (037-2)
+// 글 삭제는 이 영역에서만 쓰이므로 deletePost 함수도 함께 옮겼다.
+// post 의 타입이 PostWithContentDto | null 이 아니라 PostWithContentDto 다.
+//   → 부모(Page)가 가드 클로즈로 null 을 걸러 낸 뒤에만 이 컴포넌트를 그리기 때문에, 여기서는 null 체크가 필요 없다.
+function PostInfo({ post }: { post: PostWithContentDto }) {
+  // 훅(useRouter)은 그것을 쓰는 컴포넌트 안에서 호출한다. 삭제 후 이동이 여기서 일어나므로 Page 에서 옮겨 왔다.
+  const router = useRouter();
+
+  // 글 삭제: DELETE /api/v1/posts/{id}
+  // 본문(body)이 없는 요청이므로 method 만 넘긴다. (apiFetch 는 body 가 없으면 Content-Type 을 붙이지 않는다)
+  const deletePost = (id: number) => {
+    apiFetch(`/api/v1/posts/${id}`, {
+      method: "DELETE",
+    }).then((data) => {
+      alert(data.msg); // "1번 글이 삭제되었습니다."
+
+      // 삭제된 글의 상세페이지는 더 이상 의미가 없으므로 목록으로 이동한다.
+      // replace : 방문 기록에서 지금 페이지를 교체 → 뒤로가기로 삭제된 글 페이지에 다시 오지 않는다.
+      router.replace("/posts");
+    });
+  };
+
+  return (
+    <>
+      <div>번호 : {post.id}</div>
+      <div>제목: {post.title}</div>
+      {/* whiteSpace: "pre-line" : 본문의 줄바꿈(\n)을 화면에서도 줄바꿈으로 보여 준다.
+          JSX 의 style 은 객체로 쓰고, CSS 속성 이름은 camelCase(white-space → whiteSpace)로 쓴다. */}
+      <div style={{ whiteSpace: "pre-line" }}>{post.content}</div>
+
+      {/* 삭제/수정 버튼. flex gap-2 : 가로로 나란히, 사이 간격 */}
+      <div className="flex gap-2">
+        {/* onClick 에는 "함수"를 넘겨야 한다.
+            onClick={deletePost(post.id)} 라고 쓰면 렌더링할 때 바로 삭제가 실행돼 버린다!
+            () => deletePost(post.id) 처럼 화살표 함수로 감싸서 "클릭했을 때 실행할 함수"를 넘긴다. */}
+        {/* cursor-pointer : 마우스를 올리면 손가락 모양 (button 은 기본이 화살표) */}
+        {/* confirm(...) : 확인/취소 창을 띄우고, 확인이면 true, 취소면 false 를 돌려준다.
+            A && B : A 가 true 일 때만 B 를 실행한다(단락 평가). → 확인을 눌렀을 때만 삭제한다.
+            실수로 버튼을 눌러도 바로 지워지지 않게 하는 안전장치. */}
+        <button
+          className="p-2 rounded border cursor-pointer"
+          onClick={() => confirm(`${post.id}번 글을 정말로 삭제하시겠습니까?`) && deletePost(post.id)}
+        >
+          삭제
+        </button>
+        {/* 수정 페이지(/posts/글번호/edit)로 이동. 수정 페이지는 28강에서 만든다. */}
+        <Link className="p-2 rounded border" href={`/posts/${post.id}/edit`}>
+          수정
+        </Link>
+      </div>
+    </>
+  );
+}
+
 // 댓글 작성 + 댓글 목록 영역을 담당하는 컴포넌트 (037-1)
 // Page 컴포넌트가 너무 길어져서, 화면의 한 덩어리(댓글 영역)를 별도 컴포넌트로 떼어 냈다.
 // 같은 파일 안에 두어도 된다. export 하지 않았으므로 이 파일 안에서만 쓰인다.
@@ -161,8 +215,6 @@ function PostCommentWriteAndList({
 // src/app/posts/[id]/page.tsx == "/posts/1", "/posts/2" ... 주소(글 상세페이지)
 // 폴더 이름을 [id] 처럼 대괄호로 감싸면 "동적 세그먼트"가 된다. /posts/ 뒤에 오는 어떤 값이든 이 페이지가 처리한다.
 export default function Page() {
-  const router = useRouter();
-
   // /posts/3 으로 접속하면 { id: "3" } 을 돌려준다. 폴더 이름 [id] 가 키 이름이 된다.
   // URL 은 문자열이므로 path 파라미터 값의 타입은 항상 string 이다.
   // { id: idStr } : 구조분해할당하면서 이름을 idStr 로 바꿔 받는다. (문자열이라는 것을 이름으로 표시)
@@ -177,20 +229,6 @@ export default function Page() {
   //   null : 아직 불러오는 중
   //   []   : 다 불러왔는데 댓글이 0개
   const [postComments, setPostComments] = useState<PostCommentDto[] | null>(null);
-
-  // 글 삭제: DELETE /api/v1/posts/{id}
-  // 본문(body)이 없는 요청이므로 method 만 넘긴다. (apiFetch 는 body 가 없으면 Content-Type 을 붙이지 않는다)
-  const deletePost = (id: number) => {
-    apiFetch(`/api/v1/posts/${id}`, {
-      method: "DELETE",
-    }).then((data) => {
-      alert(data.msg); // "1번 글이 삭제되었습니다."
-
-      // 삭제된 글의 상세페이지는 더 이상 의미가 없으므로 목록으로 이동한다.
-      // replace : 방문 기록에서 지금 페이지를 교체 → 뒤로가기로 삭제된 글 페이지에 다시 오지 않는다.
-      router.replace("/posts");
-    });
-  };
 
   useEffect(() => {
     // 글 단건조회 API: GET /api/v1/posts/{id}
@@ -227,32 +265,9 @@ export default function Page() {
     <>
       <h1>글 상세페이지</h1>
 
-      <div>번호 : {post.id}</div>
-      <div>제목: {post.title}</div>
-      {/* whiteSpace: "pre-line" : 본문의 줄바꿈(\n)을 화면에서도 줄바꿈으로 보여 준다.
-          JSX 의 style 은 객체로 쓰고, CSS 속성 이름은 camelCase(white-space → whiteSpace)로 쓴다. */}
-      <div style={{ whiteSpace: "pre-line" }}>{post.content}</div>
-
-      {/* 삭제/수정 버튼. flex gap-2 : 가로로 나란히, 사이 간격 */}
-      <div className="flex gap-2">
-        {/* onClick 에는 "함수"를 넘겨야 한다.
-            onClick={deletePost(post.id)} 라고 쓰면 렌더링할 때 바로 삭제가 실행돼 버린다!
-            () => deletePost(post.id) 처럼 화살표 함수로 감싸서 "클릭했을 때 실행할 함수"를 넘긴다. */}
-        {/* cursor-pointer : 마우스를 올리면 손가락 모양 (button 은 기본이 화살표) */}
-        {/* confirm(...) : 확인/취소 창을 띄우고, 확인이면 true, 취소면 false 를 돌려준다.
-            A && B : A 가 true 일 때만 B 를 실행한다(단락 평가). → 확인을 눌렀을 때만 삭제한다.
-            실수로 버튼을 눌러도 바로 지워지지 않게 하는 안전장치. */}
-        <button
-          className="p-2 rounded border cursor-pointer"
-          onClick={() => confirm(`${post.id}번 글을 정말로 삭제하시겠습니까?`) && deletePost(post.id)}
-        >
-          삭제
-        </button>
-        {/* 수정 페이지(/posts/글번호/edit)로 이동. 수정 페이지는 28강에서 만든다. */}
-        <Link className="p-2 rounded border" href={`/posts/${post.id}/edit`}>
-          수정
-        </Link>
-      </div>
+      {/* 글 내용 + 삭제/수정 버튼은 PostInfo 컴포넌트로 분리했다. (037-2)
+          가드 클로즈 덕분에 여기서 post 는 null 이 아니므로, PostWithContentDto 타입 그대로 넘길 수 있다. */}
+      <PostInfo post={post} />
 
       {/* hr : 구분선, my-2 : 위아래 바깥 여백 */}
       <hr className="my-2" />

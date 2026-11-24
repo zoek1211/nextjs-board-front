@@ -75,6 +75,7 @@ pnpm dev                     # http://localhost:3000
 - [036-2 apiFetch에서 HTTP 에러 응답이면 예외 던지기](#036-2-apifetch에서-http-에러-응답이면-예외-던지기)
 - [036-3 응답 객체를 그대로 던져 resultCode와 msg 사용](#036-3-응답-객체를-그대로-던져-resultcode와-msg-사용)
 - [037-1 PostCommentWriteAndList 컴포넌트 도입](#037-1-postcommentwriteandlist-컴포넌트-도입)
+- [037-2 PostInfo 컴포넌트 도입](#037-2-postinfo-컴포넌트-도입)
 
 ---
 
@@ -1853,6 +1854,61 @@ export default function Page() {
         postComments={postComments}
         setPostComments={setPostComments}
       />
+    </>
+  );
+}
+```
+
+---
+
+## 037-2 PostInfo 컴포넌트 도입
+
+- 변경 내용: [commit/037-2](https://github.com/zoek1211/nextjs-board-front/commit/037-2) · 전체 코드: [tree/037-2](https://github.com/zoek1211/nextjs-board-front/tree/037-2)
+- 강의: 37강 (2단계: PostInfo 컴포넌트 도입. 강의 제목에는 `PageInfo` 로 적혀 있지만 코드의 이름은 `PostInfo`)
+
+### 핵심 내용
+
+- 글 정보(번호, 제목, 본문)와 삭제/수정 버튼을 `PostInfo` 컴포넌트로 떼어 낸다.
+- 글 삭제는 이 영역에서만 쓰이므로 `deletePost` 와, 삭제 후 이동에 쓰는 `useRouter()` 도 함께 옮겼다. **훅은 그 값을 쓰는 컴포넌트 안에서 호출한다.**
+- props 타입이 `PostWithContentDto | null` 이 아니라 **`PostWithContentDto`** 다.
+  - `Page` 가 `if (post == null) return <div>로딩중...</div>;` (가드 클로즈) 로 null 을 먼저 걸러 내고, 그 아래에서만 `<PostInfo post={post} />` 를 그린다.
+  - 그래서 `PostInfo` 안에서는 null 체크가 필요 없다.
+- 이제 `Page` 는 "데이터를 불러오고, 화면 조각(PostInfo, PostCommentWriteAndList)을 배치하는" 역할만 한다.
+- 브라우저에서 확인한 결과: 댓글 작성/삭제 즉시 반영, 새 글을 만들어 상세에서 삭제하면 confirm → "9번 글이 삭제되었습니다." → `/posts` 로 이동.
+
+### 코드 발췌
+
+`src/app/posts/[id]/page.tsx`
+
+```tsx
+function PostInfo({ post }: { post: PostWithContentDto }) {
+  const router = useRouter();
+
+  const deletePost = (id: number) => { ... router.replace("/posts"); ... };
+
+  return (
+    <>
+      <div>번호 : {post.id}</div>
+      <div>제목: {post.title}</div>
+      <div style={{ whiteSpace: "pre-line" }}>{post.content}</div>
+      {/* 삭제/수정 버튼 */}
+    </>
+  );
+}
+
+export default function Page() {
+  // ...
+  if (post == null) return <div>로딩중...</div>;
+
+  return (
+    <>
+      <h1>글 상세페이지</h1>
+
+      <PostInfo post={post} />
+
+      <hr className="my-2" />
+
+      <PostCommentWriteAndList id={id} postComments={postComments} setPostComments={setPostComments} />
     </>
   );
 }
