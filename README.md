@@ -1,6 +1,6 @@
 # nextjs-board-front
 
-슬로그 강의 **[스프링부트, Next.js REST API 연동](https://www.slog.gg/p/14175)** 1~44강을 따라 만든 Next.js + TypeScript 게시판 프론트엔드입니다.
+슬로그 강의 **[스프링부트, Next.js REST API 연동](https://www.slog.gg/p/14175)** 1~46강을 따라 만든 Next.js + TypeScript 게시판 프론트엔드입니다.
 
 - 백엔드: [jhs512/p-14172-2 (tag 068)](https://github.com/jhs512/p-14172-2/tree/068)
 - 강의 정답 리포: [jhs512/p-14175-3](https://github.com/jhs512/p-14175-3)
@@ -85,6 +85,8 @@ pnpm dev                     # http://localhost:3000
 - [043 하위 컴포넌트에서 deletePost, deleteComment 재정의](#043-하위-컴포넌트에서-deletepost-deletecomment-재정의)
 - [044-1 PostCommentWrite 컴포넌트 도입](#044-1-postcommentwrite-컴포넌트-도입)
 - [044-2 PostCommentList 컴포넌트 도입](#044-2-postcommentlist-컴포넌트-도입)
+- [045 컴포넌트 구조화와 리팩토링은 필수가 아니다 (코드 변경 없음)](#045-컴포넌트-구조화와-리팩토링은-필수가-아니다-코드-변경-없음)
+- [046-1 클로저로 usePostComments의 id 기억, 하위 컴포넌트에 id 안 넘기기](#046-1-클로저로-usepostcomments의-id-기억-하위-컴포넌트에-id-안-넘기기)
 
 ---
 
@@ -2395,3 +2397,89 @@ function PostCommentWriteAndList({ id, postCommentsState }: { ... }) {
 ```
 
 (발췌는 요약이다. 실제 코드는 `postComments != null && postComments.length == 0 && ...` 처럼 이전 조건식을 그대로 쓴다.)
+
+---
+
+## 045 컴포넌트 구조화와 리팩토링은 필수가 아니다 (코드 변경 없음)
+
+- 강의: 45강, 컴포넌트 구조화와 리팩토링은 필수가 아니다. 프론트만큼은 본인에게 쉬운 길로 가세요.
+- 코드 변경이 없는 강의라 정답 리포에 태그가 없다. 이 섹션은 `046-1` 커밋에 함께 들어 있다.
+
+### 핵심 내용
+
+- 37~44강에서 컴포넌트를 나누고, 커스텀 훅을 만들고, `ReturnType` 으로 타입을 정리했다. 하지만 **이런 구조화는 필수가 아니다.**
+- 034-2 처럼 `Page` 하나에 모든 코드를 둬도 기능은 똑같이 동작한다. 실제로 이 리포의 태그 `034-2` 와 `044-2` 는 화면과 동작이 같다.
+- 프론트엔드는 화면이 자주 바뀌고, 정답 구조도 사람마다 다르다. 처음부터 잘게 나누려고 애쓰기보다 **본인이 이해하고 고치기 쉬운 방식**으로 작성해도 된다.
+- 리팩토링은 코드가 실제로 읽기 어려워졌을 때, 같은 코드를 여러 곳에서 반복하게 됐을 때 하면 된다.
+- 복습 팁: GitHub 에서 `compare/034-2...044-2` 를 열면 같은 기능이 어떻게 구조화됐는지 한 번에 비교할 수 있다.
+  - https://github.com/zoek1211/nextjs-board-front/compare/034-2...044-2
+
+---
+
+## 046-1 클로저로 usePostComments의 id 기억, 하위 컴포넌트에 id 안 넘기기
+
+- 변경 내용: [commit/046-1](https://github.com/zoek1211/nextjs-board-front/commit/046-1) · 전체 코드: [tree/046-1](https://github.com/zoek1211/nextjs-board-front/tree/046-1)
+- 강의: 46강, PostCommentWriteAndList 와 그 하위 컴포넌트들이 미련하게 id 를 하위 컴포넌트에 넘겨줄 필요가 없다 (1단계: 클로저)
+
+### 핵심 내용
+
+- 045 까지는 `Page → PostCommentWriteAndList → PostCommentWrite / PostCommentList` 로 `id` 를 계속 넘겼다. 하위 컴포넌트는 그 `id` 를 다시 훅 함수(`writeComment(id, ...)`, `deleteComment(id, ...)`)에 넘겼다.
+- 그런데 `id` 는 이미 `usePostComments(id)` 에 넘겼다. 훅 안의 함수들은 **그 `id` 를 기억하고 있다.**
+- **클로저(closure)**: 함수는 자신이 만들어질 때 바깥에 있던 변수를 기억한다.
+  - `deleteComment`, `writeComment` 는 `usePostComments` 안에서 만들어지므로 매개변수 `id` 를 기억한다.
+  - 그래서 `id` 를 인자로 받을 필요가 없다: `deleteComment(commentId, onSuccess)`, `writeComment(content, onSuccess)`
+- 결과적으로 세 댓글 컴포넌트의 props 에서 `id` 가 사라지고 `postCommentsState` 하나만 남았다.
+- 브라우저에서 확인한 결과: 1번 글과 2번 글에서 각각 댓글을 작성/삭제하면 해당 글의 목록에만 반영된다. 클로저가 각 글의 `id` 를 정확히 기억한다.
+
+### 클로저 예시 (강의 자료)
+
+```js
+// 클로저 적용 전
+function usePost(id) {
+  const deletePost = (postId) => {
+    console.log(`${postId}번글이 삭제되었습니다.`);
+  };
+  return { deletePost };
+}
+
+const { deletePost } = usePost(1);
+deletePost(1); // 1번글이 삭제되었습니다.
+
+// 클로저 적용 후
+function usePost(id) {
+  // deletePost 는 만들어질 당시의 id 값을 기억한다.
+  const deletePost = () => {
+    console.log(`${id}번글이 삭제되었습니다.`);
+  };
+  return { deletePost };
+}
+
+const { deletePost } = usePost(1);
+deletePost(); // id 가 1 이라는 것을 기억하므로 인자가 필요 없다. → 1번글이 삭제되었습니다.
+```
+
+### 코드 발췌
+
+`src/app/posts/[id]/page.tsx`
+
+```tsx
+function usePostComments(id: number) {
+  // ...
+  const deleteComment = (commentId: number, onSuccess: (data: { msg: string }) => void) => {
+    apiFetch(`/api/v1/posts/${id}/comments/${commentId}`, { method: "DELETE" })   // id 는 클로저
+    // ...
+  };
+
+  const writeComment = (content: string, onSuccess: (data: { msg: string }) => void) => {
+    apiFetch(`/api/v1/posts/${id}/comments`, { ... })   // id 는 클로저
+    // ...
+  };
+}
+
+// 하위 컴포넌트
+writeComment(contentTextarea.value, (data) => { ... });
+_deleteComment(commentId, (data) => { ... });
+
+// Page
+<PostCommentWriteAndList postCommentsState={postCommentsState} />
+```

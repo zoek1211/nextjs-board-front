@@ -60,6 +60,12 @@ function usePost(id: number) {
 // usePostComments : 한 글의 댓글 목록에 관한 "순수 데이터 로직"을 모아 둔 커스텀 훅 (039)
 // usePost(38강)와 같은 방식이다. 상태(postComments) + 불러오기 + 삭제 + 작성을 한곳에 모은다.
 // 화면에서 할 일(alert, 입력칸 비우기)은 onSuccess 콜백으로 호출한 쪽에 맡긴다.
+//
+// 클로저(closure) (046-1)
+//   함수는 자신이 만들어질 때 바깥에 있던 변수를 기억한다. 이것을 클로저라고 한다.
+//   아래 deleteComment, writeComment 는 usePostComments 안에서 만들어지므로, 이 훅의 매개변수 id 를 기억한다.
+//   → 그래서 id 를 인자로 다시 받을 필요가 없다. 호출하는 쪽도 id 를 몰라도 된다.
+//   (045 까지는 (id, commentId, onSuccess) 처럼 id 를 또 받았다. 이름도 바깥 id 와 겹쳐서 헷갈렸다)
 function usePostComments(id: number) {
   // 댓글 목록 상태. 초기값이 null 이다. (왜 [] 가 아니라 null 인지는 31강에서)
   //   null : 아직 불러오는 중
@@ -83,11 +89,8 @@ function usePostComments(id: number) {
   // 댓글은 글에 속해 있으므로 URL 도 글 아래에 댓글이 있는 계층 구조다.
   // onSuccess: (data: { msg: string }) => void
   //   성공 후 할 일을 받는 콜백. 응답 data 를 넘겨줘서 호출한 쪽이 data.msg 로 alert 를 띄울 수 있다.
-  const deleteComment = (
-    id: number,
-    commentId: number,
-    onSuccess: (data: { msg: string }) => void
-  ) => {
+  // 046-1 : 매개변수에서 id 를 뺐다. URL 의 ${id} 는 클로저로 기억하는 usePostComments 의 id 다.
+  const deleteComment = (commentId: number, onSuccess: (data: { msg: string }) => void) => {
     apiFetch(`/api/v1/posts/${id}/comments/${commentId}`, {
       method: "DELETE",
     }).then((data) => {
@@ -109,11 +112,8 @@ function usePostComments(id: number) {
   // 댓글 작성 API: POST /api/v1/posts/{글번호}/comments
   // 어느 글의 댓글인지는 URL 에 들어 있으므로, 본문에는 content 만 보낸다.
   // 폼(textarea)에 대해서는 모른다. 내용(content) 문자열만 받는다. → 훅은 화면과 분리된다.
-  const writeComment = (
-    id: number,
-    content: string,
-    onSuccess: (data: { msg: string }) => void
-  ) => {
+  // 046-1 : 여기서도 id 는 클로저로 기억하는 값을 쓴다.
+  const writeComment = (content: string, onSuccess: (data: { msg: string }) => void) => {
     apiFetch(`/api/v1/posts/${id}/comments`, {
       method: "POST",
       // { content } : { content: content } 의 줄임 표기 (속성 이름과 변수 이름이 같을 때)
@@ -219,10 +219,8 @@ function PostInfo({ postState }: { postState: ReturnType<typeof usePost> }) {
 // props 타입은 42강의 ReturnType 덕분에 한 줄로 끝난다. (하드코딩했다면 긴 타입을 또 복사해야 했다)
 // 필요한 것은 writeComment 하나뿐이므로 그것만 꺼낸다.
 function PostCommentWrite({
-  id,
   postCommentsState,
 }: {
-  id: number;
   postCommentsState: ReturnType<typeof usePostComments>;
 }) {
   const { writeComment } = postCommentsState;
@@ -258,7 +256,8 @@ function PostCommentWrite({
     }
 
     // API 호출과 목록 갱신은 훅(writeComment)이 한다. 여기서는 성공 후 화면 처리만 넘긴다.
-    writeComment(id, contentTextarea.value, (data) => {
+    // 046-1 : 글 번호(id)는 writeComment 가 이미 알고 있으므로 내용과 콜백만 넘긴다.
+    writeComment(contentTextarea.value, (data) => {
       alert(data.msg); // "4번 댓글이 작성되었습니다."
       // 다음 댓글을 바로 쓸 수 있게 입력칸을 비운다.
       contentTextarea.value = "";
@@ -292,10 +291,8 @@ function PostCommentWrite({
 // 댓글 목록만 담당하는 컴포넌트 (044-2)
 // 044-1 까지 PostCommentWriteAndList 가 하던 "목록 그리기 + 댓글 삭제"를 그대로 옮겨 왔다.
 function PostCommentList({
-  id,
   postCommentsState,
 }: {
-  id: number;
   postCommentsState: ReturnType<typeof usePostComments>;
 }) {
   // deleteComment 는 _deleteComment 로 이름을 바꿔 받고, 아래에서 같은 이름의 함수를 새로 만든다. (043, PostInfo 와 같은 방식)
@@ -304,13 +301,14 @@ function PostCommentList({
 
   // 하위 컴포넌트에서 재정의한 deleteComment (043)
   // JSX 의 onClick 에 있던 confirm + 삭제 호출 + 성공 후 alert 를 JSX 밖으로 옮겼다.
-  // 이 컴포넌트는 이미 글 번호(id)를 알고 있으므로, 쓰는 쪽에서는 댓글 번호만 넘기면 된다.
+  // 쓰는 쪽(JSX)에서는 댓글 번호만 넘기면 된다.
   const deleteComment = (commentId: number) => {
     // 글 삭제와 같은 패턴: 취소하면 바로 return, 확인했을 때만 삭제한다.
     if (!confirm(`${commentId}번 댓글을 정말로 삭제하시겠습니까?`)) return;
 
-    // 세 번째 인자 = 삭제 성공 후 실행할 함수. "1번 댓글이 삭제되었습니다." alert
-    _deleteComment(id, commentId, (data) => {
+    // 두 번째 인자 = 삭제 성공 후 실행할 함수. "1번 댓글이 삭제되었습니다." alert
+    // 046-1 : 글 번호(id)는 _deleteComment 가 클로저로 기억하므로 넘기지 않는다.
+    _deleteComment(commentId, (data) => {
       alert(data.msg);
     });
   };
@@ -362,26 +360,25 @@ function PostCommentList({
 // 같은 파일 안에 두어도 된다. export 하지 않았으므로 이 파일 안에서만 쓰인다.
 //
 // props : 부모(Page)가 넘겨준 값들. 함수 매개변수에서 바로 구조분해해서 받는다.
-// 타입은 { id: number; ... } 처럼 객체 모양으로 적는다.
+// 타입은 { postCommentsState: ...; } 처럼 객체 모양으로 적는다.
 //   039 부터는 setPostComments 대신 usePostComments 훅의 함수(deleteComment, writeComment)를 받는다.
 //   041 부터는 훅의 결과 객체를 postCommentsState 하나로 통째로 받고, 여기서 구조분해한다. (PostInfo 와 같은 방식)
 //   042 : 길게 하드코딩하던 postCommentsState 타입을 ReturnType<typeof usePostComments> 로 바꿨다. (PostInfo 설명 참고)
 //         같은 타입을 여러 컴포넌트가 받아도(44강) 한 줄이면 되고, 훅이 바뀌면 자동으로 맞춰진다.
 function PostCommentWriteAndList({
-  id,
   postCommentsState,
 }: {
-  id: number;
   postCommentsState: ReturnType<typeof usePostComments>;
 }) {
   return (
     <>
-      {/* 하위 컴포넌트에도 훅 결과 객체(postCommentsState)를 통째로 넘긴다. (41강 방식) */}
-      <PostCommentWrite id={id} postCommentsState={postCommentsState} />
+      {/* 하위 컴포넌트에도 훅 결과 객체(postCommentsState)를 통째로 넘긴다. (41강 방식)
+          046-1 : id 를 넘기지 않는다. 하위 컴포넌트들은 id 가 필요 없다. (훅의 함수가 클로저로 기억) */}
+      <PostCommentWrite postCommentsState={postCommentsState} />
 
       <hr className="my-2" />
 
-      <PostCommentList id={id} postCommentsState={postCommentsState} />
+      <PostCommentList postCommentsState={postCommentsState} />
     </>
   );
 }
@@ -422,8 +419,9 @@ export default function Page() {
       <hr className="my-2" />
 
       {/* 댓글 작성 폼과 댓글 목록은 PostCommentWriteAndList 컴포넌트로 분리했다. (037-1)
-          041 : usePostComments 결과 객체를 통째로 넘긴다. props 가 짧아져서 한 줄에 들어간다. */}
-      <PostCommentWriteAndList id={id} postCommentsState={postCommentsState} />
+          041 : usePostComments 결과 객체를 통째로 넘긴다. props 가 짧아져서 한 줄에 들어간다.
+          046-1 : id 는 이미 usePostComments(id) 에 넘겼으므로, 미련하게 하위 컴포넌트에 또 넘기지 않는다. */}
+      <PostCommentWriteAndList postCommentsState={postCommentsState} />
     </>
   );
 }
