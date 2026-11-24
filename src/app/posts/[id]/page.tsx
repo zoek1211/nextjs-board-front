@@ -63,10 +63,14 @@ function usePost(id: number) {
 //
 // 클로저(closure) (046-1)
 //   함수는 자신이 만들어질 때 바깥에 있던 변수를 기억한다. 이것을 클로저라고 한다.
-//   아래 deleteComment, writeComment 는 usePostComments 안에서 만들어지므로, 이 훅의 매개변수 id 를 기억한다.
-//   → 그래서 id 를 인자로 다시 받을 필요가 없다. 호출하는 쪽도 id 를 몰라도 된다.
+//   아래 deleteComment, writeComment 는 usePostComments 안에서 만들어지므로, 이 훅의 매개변수(글 번호)를 기억한다.
+//   → 그래서 글 번호를 인자로 다시 받을 필요가 없다. 호출하는 쪽도 글 번호를 몰라도 된다.
+//
+// 047 : 매개변수 이름을 id → postId 로 바꿨다.
+//   이 훅 안에는 댓글 번호(commentId, c.id)도 등장한다. 그냥 id 라고 하면 무엇의 번호인지 헷갈린다.
+//   (Page 의 id 는 "이 페이지의 글 번호"로 맥락이 분명하므로 그대로 둔다.)
 //   (045 까지는 (id, commentId, onSuccess) 처럼 id 를 또 받았다. 이름도 바깥 id 와 겹쳐서 헷갈렸다)
-function usePostComments(id: number) {
+function usePostComments(postId: number) {
   // 댓글 목록 상태. 초기값이 null 이다. (왜 [] 가 아니라 null 인지는 31강에서)
   //   null : 아직 불러오는 중
   //   []   : 다 불러왔는데 댓글이 0개
@@ -77,21 +81,21 @@ function usePostComments(id: number) {
   useEffect(() => {
     // 댓글 다건조회 API: GET /api/v1/posts/{id}/comments
     // 글 조회(usePost)와 댓글 조회는 서로 기다릴 필요가 없으므로 동시에 요청한다. (먼저 도착한 쪽부터 화면에 반영)
-    apiFetch(`/api/v1/posts/${id}/comments`)
+    apiFetch(`/api/v1/posts/${postId}/comments`)
       .then(setPostComments)
       .catch((error) => {
         alert(`${error.resultCode} : ${error.msg}`);
       });
-    // 의존성 배열에 id 를 넣었다. → id 가 바뀌면(다른 글로 이동하면) 이 effect 가 다시 실행되어 새 댓글 목록을 불러온다.
-  }, [id]);
+    // 의존성 배열에 postId 를 넣었다. → postId 가 바뀌면(다른 글로 이동하면) 이 effect 가 다시 실행되어 새 댓글 목록을 불러온다.
+  }, [postId]);
 
   // 댓글 삭제: DELETE /api/v1/posts/{글번호}/comments/{댓글번호}
   // 댓글은 글에 속해 있으므로 URL 도 글 아래에 댓글이 있는 계층 구조다.
   // onSuccess: (data: { msg: string }) => void
   //   성공 후 할 일을 받는 콜백. 응답 data 를 넘겨줘서 호출한 쪽이 data.msg 로 alert 를 띄울 수 있다.
-  // 046-1 : 매개변수에서 id 를 뺐다. URL 의 ${id} 는 클로저로 기억하는 usePostComments 의 id 다.
+  // 046-1 : 매개변수에서 글 번호를 뺐다. URL 의 글 번호는 클로저로 기억하는 usePostComments 의 매개변수(postId)다.
   const deleteComment = (commentId: number, onSuccess: (data: { msg: string }) => void) => {
-    apiFetch(`/api/v1/posts/${id}/comments/${commentId}`, {
+    apiFetch(`/api/v1/posts/${postId}/comments/${commentId}`, {
       method: "DELETE",
     }).then((data) => {
       // 서버에서 지운 것을 화면에도 반영하려면 상태(postComments)를 바꿔야 한다.
@@ -112,9 +116,9 @@ function usePostComments(id: number) {
   // 댓글 작성 API: POST /api/v1/posts/{글번호}/comments
   // 어느 글의 댓글인지는 URL 에 들어 있으므로, 본문에는 content 만 보낸다.
   // 폼(textarea)에 대해서는 모른다. 내용(content) 문자열만 받는다. → 훅은 화면과 분리된다.
-  // 046-1 : 여기서도 id 는 클로저로 기억하는 값을 쓴다.
+  // 046-1 : 여기서도 글 번호(postId)는 클로저로 기억하는 값을 쓴다.
   const writeComment = (content: string, onSuccess: (data: { msg: string }) => void) => {
-    apiFetch(`/api/v1/posts/${id}/comments`, {
+    apiFetch(`/api/v1/posts/${postId}/comments`, {
       method: "POST",
       // { content } : { content: content } 의 줄임 표기 (속성 이름과 변수 이름이 같을 때)
       body: JSON.stringify({
@@ -135,10 +139,11 @@ function usePostComments(id: number) {
 
   // setPostComments 는 밖으로 내보내지 않는다.
   // → 댓글 목록은 이 훅이 제공하는 함수(deleteComment, writeComment)로만 바뀐다. 상태를 바꾸는 길이 한곳으로 모인다.
-  // 046-2 : id 도 함께 돌려준다. 하위 컴포넌트가 글 번호를 화면에 보여 주고 싶으면 여기서 꺼내면 된다.
-  //         id 가 필요하다고 props 로 따로 받는 대신, id 를 알고 있는 훅이 제공한다.
+  // 046-2 : 글 번호도 함께 돌려준다. 하위 컴포넌트가 글 번호를 화면에 보여 주고 싶으면 여기서 꺼내면 된다.
+  //         글 번호가 필요하다고 props 로 따로 받는 대신, 그것을 알고 있는 훅이 제공한다.
+  // 047 : 이름이 id 이면 "글 번호인지 댓글 번호인지" 헷갈린다. postId 로 바꿔서 글 번호라는 것을 분명히 했다.
   return {
-    id,
+    postId,
     postComments,
     deleteComment,
     writeComment,
@@ -226,7 +231,7 @@ function PostCommentWrite({
 }: {
   postCommentsState: ReturnType<typeof usePostComments>;
 }) {
-  const { id, writeComment } = postCommentsState;
+  const { postId, writeComment } = postCommentsState;
 
   // 댓글 작성 폼 제출 처리. 글쓰기 폼(22~25강)과 같은 패턴이다.
   const handleCommentWriteFormSubmit = (
@@ -269,8 +274,8 @@ function PostCommentWrite({
 
   return (
     <>
-      {/* 046-2 : 훅이 제공한 id 로 몇 번 글의 댓글인지 보여 준다. */}
-      <h2>{id}번글에 대한 댓글 작성</h2>
+      {/* 046-2 : 훅이 제공한 글 번호(047 부터 postId)로 몇 번 글의 댓글인지 보여 준다. */}
+      <h2>{postId}번글에 대한 댓글 작성</h2>
 
       {/* flex gap-2 : 입력칸과 작성 버튼을 가로로 나란히 */}
       <form className="flex gap-2" onSubmit={handleCommentWriteFormSubmit}>
@@ -301,8 +306,12 @@ function PostCommentList({
 }) {
   // deleteComment 는 _deleteComment 로 이름을 바꿔 받고, 아래에서 같은 이름의 함수를 새로 만든다. (043, PostInfo 와 같은 방식)
   // writeComment 는 PostCommentWrite 가 쓰므로 여기서는 꺼내지 않는다. (044-1)
-  // 046-2 : 제목에 글 번호를 보여 주기 위해 id 도 꺼낸다. (props 가 아니라 훅 결과에서)
-  const { id, postComments, deleteComment: _deleteComment } = postCommentsState;
+  // 046-2 : 제목에 글 번호를 보여 주기 위해 글 번호(047 부터 postId)도 꺼낸다. (props 가 아니라 훅 결과에서)
+  const {
+    postId,
+    postComments,
+    deleteComment: _deleteComment,
+  } = postCommentsState;
 
   // 하위 컴포넌트에서 재정의한 deleteComment (043)
   // JSX 의 onClick 에 있던 confirm + 삭제 호출 + 성공 후 alert 를 JSX 밖으로 옮겼다.
@@ -325,7 +334,7 @@ function PostCommentList({
 
   return (
     <>
-      <h2>{id}번 글에 대한 댓글 목록</h2>
+      <h2>{postId}번 글에 대한 댓글 목록</h2>
 
       {/* 상태가 3가지라서 3갈래로 나눠 그렸었다. (1) null → 로딩중 (2) 빈 배열 → 없음 (3) 원소 있음 → 목록
           1) 은 위의 가드 클로즈가 처리하므로 JSX 에서는 2), 3) 만 남았다. (044-2) */}

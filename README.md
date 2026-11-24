@@ -1,6 +1,6 @@
 # nextjs-board-front
 
-슬로그 강의 **[스프링부트, Next.js REST API 연동](https://www.slog.gg/p/14175)** 1~46강을 따라 만든 Next.js + TypeScript 게시판 프론트엔드입니다.
+슬로그 강의 **[스프링부트, Next.js REST API 연동](https://www.slog.gg/p/14175)** 1~47강을 따라 만든 Next.js + TypeScript 게시판 프론트엔드입니다.
 
 - 백엔드: [jhs512/p-14172-2 (tag 068)](https://github.com/jhs512/p-14172-2/tree/068)
 - 강의 정답 리포: [jhs512/p-14175-3](https://github.com/jhs512/p-14175-3)
@@ -88,6 +88,7 @@ pnpm dev                     # http://localhost:3000
 - [045 컴포넌트 구조화와 리팩토링은 필수가 아니다 (코드 변경 없음)](#045-컴포넌트-구조화와-리팩토링은-필수가-아니다-코드-변경-없음)
 - [046-1 클로저로 usePostComments의 id 기억, 하위 컴포넌트에 id 안 넘기기](#046-1-클로저로-usepostcomments의-id-기억-하위-컴포넌트에-id-안-넘기기)
 - [046-2 id가 필요하면 usePostComments가 제공](#046-2-id가-필요하면-usepostcomments가-제공)
+- [047 id 대신 postId로 이름을 명확하게](#047-id-대신-postid로-이름을-명확하게)
 
 ---
 
@@ -2523,4 +2524,47 @@ const { id, writeComment } = postCommentsState;
 // PostCommentList
 const { id, postComments, deleteComment: _deleteComment } = postCommentsState;
 <h2>{id}번 글에 대한 댓글 목록</h2>
+```
+
+---
+
+## 047 id 대신 postId로 이름을 명확하게
+
+- 변경 내용: [commit/047](https://github.com/zoek1211/nextjs-board-front/commit/047) · 전체 코드: [tree/047](https://github.com/zoek1211/nextjs-board-front/tree/047)
+- 강의: 47강, 특정 상황에서는 id 가 아닌 postId 로 하는 것이 코드 명확성을 향상시킨다
+
+### 핵심 내용
+
+- `usePostComments` 안에는 **글 번호**와 **댓글 번호**(`commentId`, `c.id`)가 함께 등장한다. 글 번호를 그냥 `id` 라고 부르면 무엇의 번호인지 헷갈린다.
+- 그래서 훅의 매개변수와 반환값의 이름을 `id` → **`postId`** 로 바꾼다.
+  - `usePostComments(postId: number)`, URL 의 `${postId}`, 의존성 배열 `[postId]`
+  - 반환값 `{ postId, postComments, deleteComment, writeComment }`
+  - 하위 컴포넌트도 `const { postId, ... } = postCommentsState;`, 제목 `{postId}번글에 대한 댓글 작성`
+- `Page` 의 `id` 는 그대로다. 이 페이지(`/posts/[id]`)에서 `id` 는 맥락상 글 번호가 분명하기 때문이다. 이름은 "어디서 쓰이는지"에 따라 명확하게 고르면 된다.
+- 이름만 바뀌었으므로 동작은 같다. 브라우저에서 확인한 결과(2번 글): 제목 "2번글에 대한 댓글 작성 | 2번 글에 대한 댓글 목록", 댓글 작성/삭제 정상.
+
+### 코드 발췌
+
+`src/app/posts/[id]/page.tsx`
+
+```tsx
+function usePostComments(postId: number) {
+  // ...
+  useEffect(() => {
+    apiFetch(`/api/v1/posts/${postId}/comments`)
+    // ...
+  }, [postId]);
+
+  const deleteComment = (commentId: number, onSuccess: ...) => {
+    apiFetch(`/api/v1/posts/${postId}/comments/${commentId}`, { method: "DELETE" })
+    // ...
+  };
+
+  return {
+    postId,
+    postComments,
+    deleteComment,
+    writeComment,
+  };
+}
 ```
