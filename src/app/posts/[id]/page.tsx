@@ -214,47 +214,18 @@ function PostInfo({ postState }: { postState: ReturnType<typeof usePost> }) {
   );
 }
 
-// 댓글 작성 + 댓글 목록 영역을 담당하는 컴포넌트 (037-1)
-// Page 컴포넌트가 너무 길어져서, 화면의 한 덩어리(댓글 영역)를 별도 컴포넌트로 떼어 냈다.
-// 같은 파일 안에 두어도 된다. export 하지 않았으므로 이 파일 안에서만 쓰인다.
-//
-// props : 부모(Page)가 넘겨준 값들. 함수 매개변수에서 바로 구조분해해서 받는다.
-// 타입은 { id: number; ... } 처럼 객체 모양으로 적는다.
-//   039 부터는 setPostComments 대신 usePostComments 훅의 함수(deleteComment, writeComment)를 받는다.
-//   041 부터는 훅의 결과 객체를 postCommentsState 하나로 통째로 받고, 여기서 구조분해한다. (PostInfo 와 같은 방식)
-//   042 : 길게 하드코딩하던 postCommentsState 타입을 ReturnType<typeof usePostComments> 로 바꿨다. (PostInfo 설명 참고)
-//         같은 타입을 여러 컴포넌트가 받아도(44강) 한 줄이면 되고, 훅이 바뀌면 자동으로 맞춰진다.
-function PostCommentWriteAndList({
+// 댓글 작성 폼만 담당하는 컴포넌트 (044-1)
+// PostCommentWriteAndList 가 "작성 폼 + 목록"을 모두 갖고 있어서, 작성 폼을 다시 떼어 냈다.
+// props 타입은 42강의 ReturnType 덕분에 한 줄로 끝난다. (하드코딩했다면 긴 타입을 또 복사해야 했다)
+// 필요한 것은 writeComment 하나뿐이므로 그것만 꺼낸다.
+function PostCommentWrite({
   id,
   postCommentsState,
 }: {
   id: number;
   postCommentsState: ReturnType<typeof usePostComments>;
 }) {
-  // deleteComment 는 _deleteComment 로 이름을 바꿔 받고, 아래에서 같은 이름의 함수를 새로 만든다. (043, PostInfo 와 같은 방식)
-  const {
-    postComments,
-    deleteComment: _deleteComment,
-    writeComment,
-  } = postCommentsState;
-
-  // 댓글 목록을 아직 불러오는 중이면 댓글 영역 전체 대신 로딩 표시만 그린다. (041)
-  // 이 아래에서는 postComments 가 null 이 아니다.
-  // (그래서 JSX 의 "postComments == null → 댓글 로딩중..." 갈래는 사실상 실행되지 않는다. 정답 코드 그대로 둔다)
-  if (postComments == null) return <div>로딩중...</div>;
-
-  // 하위 컴포넌트에서 재정의한 deleteComment (043)
-  // JSX 의 onClick 에 있던 confirm + 삭제 호출 + 성공 후 alert 를 JSX 밖으로 옮겼다.
-  // 이 컴포넌트는 이미 글 번호(id)를 알고 있으므로, 쓰는 쪽에서는 댓글 번호만 넘기면 된다.
-  const deleteComment = (commentId: number) => {
-    // 글 삭제와 같은 패턴: 취소하면 바로 return, 확인했을 때만 삭제한다.
-    if (!confirm(`${commentId}번 댓글을 정말로 삭제하시겠습니까?`)) return;
-
-    // 세 번째 인자 = 삭제 성공 후 실행할 함수. "1번 댓글이 삭제되었습니다." alert
-    _deleteComment(id, commentId, (data) => {
-      alert(data.msg);
-    });
-  };
+  const { writeComment } = postCommentsState;
 
   // 댓글 작성 폼 제출 처리. 글쓰기 폼(22~25강)과 같은 패턴이다.
   const handleCommentWriteFormSubmit = (
@@ -313,6 +284,55 @@ function PostCommentWriteAndList({
           작성
         </button>
       </form>
+
+    </>
+  );
+}
+
+// 댓글 작성 + 댓글 목록 영역을 담당하는 컴포넌트 (037-1)
+// 044-1 : 작성 폼은 PostCommentWrite 로 분리했다. 이 컴포넌트는 그것을 배치하고, 목록을 그린다.
+// Page 컴포넌트가 너무 길어져서, 화면의 한 덩어리(댓글 영역)를 별도 컴포넌트로 떼어 냈다.
+// 같은 파일 안에 두어도 된다. export 하지 않았으므로 이 파일 안에서만 쓰인다.
+//
+// props : 부모(Page)가 넘겨준 값들. 함수 매개변수에서 바로 구조분해해서 받는다.
+// 타입은 { id: number; ... } 처럼 객체 모양으로 적는다.
+//   039 부터는 setPostComments 대신 usePostComments 훅의 함수(deleteComment, writeComment)를 받는다.
+//   041 부터는 훅의 결과 객체를 postCommentsState 하나로 통째로 받고, 여기서 구조분해한다. (PostInfo 와 같은 방식)
+//   042 : 길게 하드코딩하던 postCommentsState 타입을 ReturnType<typeof usePostComments> 로 바꿨다. (PostInfo 설명 참고)
+//         같은 타입을 여러 컴포넌트가 받아도(44강) 한 줄이면 되고, 훅이 바뀌면 자동으로 맞춰진다.
+function PostCommentWriteAndList({
+  id,
+  postCommentsState,
+}: {
+  id: number;
+  postCommentsState: ReturnType<typeof usePostComments>;
+}) {
+  // deleteComment 는 _deleteComment 로 이름을 바꿔 받고, 아래에서 같은 이름의 함수를 새로 만든다. (043, PostInfo 와 같은 방식)
+  // 044-1 : writeComment 는 PostCommentWrite 가 쓰므로 여기서는 꺼내지 않는다.
+  const { postComments, deleteComment: _deleteComment } = postCommentsState;
+
+  // 댓글 목록을 아직 불러오는 중이면 댓글 영역 전체 대신 로딩 표시만 그린다. (041)
+  // 이 아래에서는 postComments 가 null 이 아니다.
+  // (그래서 JSX 의 "postComments == null → 댓글 로딩중..." 갈래는 사실상 실행되지 않는다. 정답 코드 그대로 둔다)
+  if (postComments == null) return <div>로딩중...</div>;
+
+  // 하위 컴포넌트에서 재정의한 deleteComment (043)
+  // JSX 의 onClick 에 있던 confirm + 삭제 호출 + 성공 후 alert 를 JSX 밖으로 옮겼다.
+  // 이 컴포넌트는 이미 글 번호(id)를 알고 있으므로, 쓰는 쪽에서는 댓글 번호만 넘기면 된다.
+  const deleteComment = (commentId: number) => {
+    // 글 삭제와 같은 패턴: 취소하면 바로 return, 확인했을 때만 삭제한다.
+    if (!confirm(`${commentId}번 댓글을 정말로 삭제하시겠습니까?`)) return;
+
+    // 세 번째 인자 = 삭제 성공 후 실행할 함수. "1번 댓글이 삭제되었습니다." alert
+    _deleteComment(id, commentId, (data) => {
+      alert(data.msg);
+    });
+  };
+
+  return (
+    <>
+      {/* 하위 컴포넌트에도 훅 결과 객체(postCommentsState)를 통째로 넘긴다. (41강 방식) */}
+      <PostCommentWrite id={id} postCommentsState={postCommentsState} />
 
       <hr className="my-2" />
 

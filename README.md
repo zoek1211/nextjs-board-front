@@ -1,6 +1,6 @@
 # nextjs-board-front
 
-슬로그 강의 **[스프링부트, Next.js REST API 연동](https://www.slog.gg/p/14175)** 1~43강을 따라 만든 Next.js + TypeScript 게시판 프론트엔드입니다.
+슬로그 강의 **[스프링부트, Next.js REST API 연동](https://www.slog.gg/p/14175)** 1~44강을 따라 만든 Next.js + TypeScript 게시판 프론트엔드입니다.
 
 - 백엔드: [jhs512/p-14172-2 (tag 068)](https://github.com/jhs512/p-14172-2/tree/068)
 - 강의 정답 리포: [jhs512/p-14175-3](https://github.com/jhs512/p-14175-3)
@@ -83,6 +83,7 @@ pnpm dev                     # http://localhost:3000
 - [041 커스텀 훅 결과를 구조분해하지 않고 통째로 하위 컴포넌트에 전달](#041-커스텀-훅-결과를-구조분해하지-않고-통째로-하위-컴포넌트에-전달)
 - [042 ReturnType으로 하위 컴포넌트 props 타입 하드코딩 없애기](#042-returntype으로-하위-컴포넌트-props-타입-하드코딩-없애기)
 - [043 하위 컴포넌트에서 deletePost, deleteComment 재정의](#043-하위-컴포넌트에서-deletepost-deletecomment-재정의)
+- [044-1 PostCommentWrite 컴포넌트 도입](#044-1-postcommentwrite-컴포넌트-도입)
 
 ---
 
@@ -2273,4 +2274,61 @@ const deleteComment = (commentId: number) => {
 };
 
 <button className="ml-2 p-2 rounded border" onClick={() => deleteComment(comment.id)}>삭제</button>
+```
+
+---
+
+## 044-1 PostCommentWrite 컴포넌트 도입
+
+- 변경 내용: [commit/044-1](https://github.com/zoek1211/nextjs-board-front/commit/044-1) · 전체 코드: [tree/044-1](https://github.com/zoek1211/nextjs-board-front/tree/044-1)
+- 강의: 44강, PostCommentWrite 컴포넌트와 PostCommentList 컴포넌트를 추가로 도입 (1단계: PostCommentWrite)
+
+### 핵심 내용
+
+- `PostCommentWriteAndList` 가 여전히 "작성 폼 + 목록" 두 가지 일을 한다. 그중 **작성 폼**을 `PostCommentWrite` 로 떼어 낸다.
+  - 옮겨 간 것: `handleCommentWriteFormSubmit`(유효성 체크 + `writeComment` 호출)와 작성 폼 JSX
+  - `PostCommentWrite` 는 `writeComment` 하나만 필요하므로 `const { writeComment } = postCommentsState;` 로 그것만 꺼낸다.
+  - `PostCommentWriteAndList` 는 `postComments`, `deleteComment` 만 꺼낸다.
+- 하위 컴포넌트에도 훅 결과를 **통째로** 넘긴다: `<PostCommentWrite id={id} postCommentsState={postCommentsState} />` (41강 방식)
+- 42강 `ReturnType` 덕분에 새 컴포넌트의 props 타입이 한 줄이다. 하드코딩했다면 긴 타입을 또 복사해야 했다.
+- 브라우저에서 확인한 결과: 댓글 작성 → alert, 목록 추가, 입력칸 비워짐 / 삭제 → 목록에서 제거 / 글 삭제 → `/posts` 이동.
+
+### 코드 발췌
+
+`src/app/posts/[id]/page.tsx`
+
+```tsx
+function PostCommentWrite({
+  id,
+  postCommentsState,
+}: {
+  id: number;
+  postCommentsState: ReturnType<typeof usePostComments>;
+}) {
+  const { writeComment } = postCommentsState;
+
+  const handleCommentWriteFormSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => { ... };
+
+  return (
+    <>
+      <h2>댓글 작성</h2>
+      <form className="flex gap-2" onSubmit={handleCommentWriteFormSubmit}>{/* ... */}</form>
+    </>
+  );
+}
+
+function PostCommentWriteAndList({ id, postCommentsState }: { ... }) {
+  const { postComments, deleteComment: _deleteComment } = postCommentsState;
+  // ...
+  return (
+    <>
+      <PostCommentWrite id={id} postCommentsState={postCommentsState} />
+
+      <hr className="my-2" />
+
+      <h2>댓글 목록</h2>
+      {/* 목록 */}
+    </>
+  );
+}
 ```
