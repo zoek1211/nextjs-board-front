@@ -84,6 +84,7 @@ pnpm dev                     # http://localhost:3000
 - [042 ReturnType으로 하위 컴포넌트 props 타입 하드코딩 없애기](#042-returntype으로-하위-컴포넌트-props-타입-하드코딩-없애기)
 - [043 하위 컴포넌트에서 deletePost, deleteComment 재정의](#043-하위-컴포넌트에서-deletepost-deletecomment-재정의)
 - [044-1 PostCommentWrite 컴포넌트 도입](#044-1-postcommentwrite-컴포넌트-도입)
+- [044-2 PostCommentList 컴포넌트 도입](#044-2-postcommentlist-컴포넌트-도입)
 
 ---
 
@@ -2332,3 +2333,65 @@ function PostCommentWriteAndList({ id, postCommentsState }: { ... }) {
   );
 }
 ```
+
+---
+
+## 044-2 PostCommentList 컴포넌트 도입
+
+- 변경 내용: [commit/044-2](https://github.com/zoek1211/nextjs-board-front/commit/044-2) · 전체 코드: [tree/044-2](https://github.com/zoek1211/nextjs-board-front/tree/044-2)
+- 강의: 44강 (2단계: PostCommentList 컴포넌트 도입)
+
+### 핵심 내용
+
+- 남아 있던 **댓글 목록 + 댓글 삭제**를 `PostCommentList` 로 떼어 낸다.
+- 이제 `PostCommentWriteAndList` 는 로직 없이 **두 하위 컴포넌트를 배치만** 한다.
+
+  ```
+  Page
+  ├─ PostInfo                  (글 정보, 글 삭제)
+  └─ PostCommentWriteAndList   (배치만)
+     ├─ PostCommentWrite       (댓글 작성 폼)
+     └─ PostCommentList        (댓글 목록, 댓글 삭제)
+  ```
+
+- 로딩 처리도 달라졌다.
+  - 044-1 까지는 `postComments == null` 이면 댓글 영역 전체(작성 폼 포함)가 "로딩중..." 이었다.
+  - 이제 가드 클로즈가 `PostCommentList` 에만 있으므로, 목록을 불러오는 중에도 **작성 폼은 보이고 목록 자리만 "로딩중..."** 이다.
+  - 가드 클로즈가 null 을 처리하므로 JSX 의 `postComments == null && <div>댓글 로딩중...</div>` 갈래는 지웠다.
+- 브라우저에서 확인한 결과: 댓글 작성/삭제, 글 삭제 후 `/posts` 이동 모두 이전과 같다.
+
+### 코드 발췌
+
+`src/app/posts/[id]/page.tsx`
+
+```tsx
+function PostCommentList({ id, postCommentsState }: { ... }) {
+  const { postComments, deleteComment: _deleteComment } = postCommentsState;
+
+  const deleteComment = (commentId: number) => { ... };
+
+  if (postComments == null) return <div>로딩중...</div>;
+
+  return (
+    <>
+      <h2>댓글 목록</h2>
+      {postComments.length == 0 && <div>댓글이 없습니다.</div>}
+      {/* 목록 */}
+    </>
+  );
+}
+
+function PostCommentWriteAndList({ id, postCommentsState }: { ... }) {
+  return (
+    <>
+      <PostCommentWrite id={id} postCommentsState={postCommentsState} />
+
+      <hr className="my-2" />
+
+      <PostCommentList id={id} postCommentsState={postCommentsState} />
+    </>
+  );
+}
+```
+
+(발췌는 요약이다. 실제 코드는 `postComments != null && postComments.length == 0 && ...` 처럼 이전 조건식을 그대로 쓴다.)

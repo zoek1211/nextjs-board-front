@@ -289,18 +289,9 @@ function PostCommentWrite({
   );
 }
 
-// 댓글 작성 + 댓글 목록 영역을 담당하는 컴포넌트 (037-1)
-// 044-1 : 작성 폼은 PostCommentWrite 로 분리했다. 이 컴포넌트는 그것을 배치하고, 목록을 그린다.
-// Page 컴포넌트가 너무 길어져서, 화면의 한 덩어리(댓글 영역)를 별도 컴포넌트로 떼어 냈다.
-// 같은 파일 안에 두어도 된다. export 하지 않았으므로 이 파일 안에서만 쓰인다.
-//
-// props : 부모(Page)가 넘겨준 값들. 함수 매개변수에서 바로 구조분해해서 받는다.
-// 타입은 { id: number; ... } 처럼 객체 모양으로 적는다.
-//   039 부터는 setPostComments 대신 usePostComments 훅의 함수(deleteComment, writeComment)를 받는다.
-//   041 부터는 훅의 결과 객체를 postCommentsState 하나로 통째로 받고, 여기서 구조분해한다. (PostInfo 와 같은 방식)
-//   042 : 길게 하드코딩하던 postCommentsState 타입을 ReturnType<typeof usePostComments> 로 바꿨다. (PostInfo 설명 참고)
-//         같은 타입을 여러 컴포넌트가 받아도(44강) 한 줄이면 되고, 훅이 바뀌면 자동으로 맞춰진다.
-function PostCommentWriteAndList({
+// 댓글 목록만 담당하는 컴포넌트 (044-2)
+// 044-1 까지 PostCommentWriteAndList 가 하던 "목록 그리기 + 댓글 삭제"를 그대로 옮겨 왔다.
+function PostCommentList({
   id,
   postCommentsState,
 }: {
@@ -308,13 +299,8 @@ function PostCommentWriteAndList({
   postCommentsState: ReturnType<typeof usePostComments>;
 }) {
   // deleteComment 는 _deleteComment 로 이름을 바꿔 받고, 아래에서 같은 이름의 함수를 새로 만든다. (043, PostInfo 와 같은 방식)
-  // 044-1 : writeComment 는 PostCommentWrite 가 쓰므로 여기서는 꺼내지 않는다.
+  // writeComment 는 PostCommentWrite 가 쓰므로 여기서는 꺼내지 않는다. (044-1)
   const { postComments, deleteComment: _deleteComment } = postCommentsState;
-
-  // 댓글 목록을 아직 불러오는 중이면 댓글 영역 전체 대신 로딩 표시만 그린다. (041)
-  // 이 아래에서는 postComments 가 null 이 아니다.
-  // (그래서 JSX 의 "postComments == null → 댓글 로딩중..." 갈래는 사실상 실행되지 않는다. 정답 코드 그대로 둔다)
-  if (postComments == null) return <div>로딩중...</div>;
 
   // 하위 컴포넌트에서 재정의한 deleteComment (043)
   // JSX 의 onClick 에 있던 confirm + 삭제 호출 + 성공 후 alert 를 JSX 밖으로 옮겼다.
@@ -329,19 +315,17 @@ function PostCommentWriteAndList({
     });
   };
 
+  // 댓글 목록을 아직 불러오는 중이면 목록 대신 로딩 표시만 그린다. (041)
+  // 044-2 : 작성 폼이 다른 컴포넌트로 나갔으므로, 이제 로딩 중이어도 작성 폼은 보이고 목록 자리만 "로딩중..." 이 된다.
+  // 이 아래에서는 postComments 가 null 이 아니다. 그래서 JSX 에 있던 "postComments == null → 댓글 로딩중..." 갈래를 지웠다.
+  if (postComments == null) return <div>로딩중...</div>;
+
   return (
     <>
-      {/* 하위 컴포넌트에도 훅 결과 객체(postCommentsState)를 통째로 넘긴다. (41강 방식) */}
-      <PostCommentWrite id={id} postCommentsState={postCommentsState} />
-
-      <hr className="my-2" />
-
       <h2>댓글 목록</h2>
 
-      {/* 상태가 3가지라서 3갈래로 나눠 그린다. */}
-      {/* 1) null → 아직 불러오는 중 */}
-      {postComments == null && <div>댓글 로딩중...</div>}
-
+      {/* 상태가 3가지라서 3갈래로 나눠 그렸었다. (1) null → 로딩중 (2) 빈 배열 → 없음 (3) 원소 있음 → 목록
+          1) 은 위의 가드 클로즈가 처리하므로 JSX 에서는 2), 3) 만 남았다. (044-2) */}
       {/* 2) 빈 배열 → 불러왔지만 댓글이 없음 */}
       {postComments != null && postComments.length == 0 && (
         <div>댓글이 없습니다.</div>
@@ -367,6 +351,37 @@ function PostCommentWriteAndList({
           ))}
         </ul>
       )}
+    </>
+  );
+}
+
+// 댓글 작성 + 댓글 목록 영역을 담당하는 컴포넌트 (037-1)
+// 044-1 : 작성 폼은 PostCommentWrite 로 분리했다.
+// 044-2 : 목록도 PostCommentList 로 분리했다. 이제 이 컴포넌트는 두 하위 컴포넌트를 배치만 한다. (로직 없음)
+// Page 컴포넌트가 너무 길어져서, 화면의 한 덩어리(댓글 영역)를 별도 컴포넌트로 떼어 냈다.
+// 같은 파일 안에 두어도 된다. export 하지 않았으므로 이 파일 안에서만 쓰인다.
+//
+// props : 부모(Page)가 넘겨준 값들. 함수 매개변수에서 바로 구조분해해서 받는다.
+// 타입은 { id: number; ... } 처럼 객체 모양으로 적는다.
+//   039 부터는 setPostComments 대신 usePostComments 훅의 함수(deleteComment, writeComment)를 받는다.
+//   041 부터는 훅의 결과 객체를 postCommentsState 하나로 통째로 받고, 여기서 구조분해한다. (PostInfo 와 같은 방식)
+//   042 : 길게 하드코딩하던 postCommentsState 타입을 ReturnType<typeof usePostComments> 로 바꿨다. (PostInfo 설명 참고)
+//         같은 타입을 여러 컴포넌트가 받아도(44강) 한 줄이면 되고, 훅이 바뀌면 자동으로 맞춰진다.
+function PostCommentWriteAndList({
+  id,
+  postCommentsState,
+}: {
+  id: number;
+  postCommentsState: ReturnType<typeof usePostComments>;
+}) {
+  return (
+    <>
+      {/* 하위 컴포넌트에도 훅 결과 객체(postCommentsState)를 통째로 넘긴다. (41강 방식) */}
+      <PostCommentWrite id={id} postCommentsState={postCommentsState} />
+
+      <hr className="my-2" />
+
+      <PostCommentList id={id} postCommentsState={postCommentsState} />
     </>
   );
 }
