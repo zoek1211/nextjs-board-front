@@ -10,40 +10,22 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-// src/app/posts/[id]/page.tsx == "/posts/1", "/posts/2" ... 주소(글 상세페이지)
-// 폴더 이름을 [id] 처럼 대괄호로 감싸면 "동적 세그먼트"가 된다. /posts/ 뒤에 오는 어떤 값이든 이 페이지가 처리한다.
-export default function Page() {
-  const router = useRouter();
-
-  // /posts/3 으로 접속하면 { id: "3" } 을 돌려준다. 폴더 이름 [id] 가 키 이름이 된다.
-  // URL 은 문자열이므로 path 파라미터 값의 타입은 항상 string 이다.
-  // { id: idStr } : 구조분해할당하면서 이름을 idStr 로 바꿔 받는다. (문자열이라는 것을 이름으로 표시)
-  const { id: idStr } = useParams<{ id: string }>();
-  // 글 번호는 숫자로 다루는 것이 자연스러우므로 Number() 로 변환한다. "3" → 3
-  const id = Number(idStr);
-
-  // 글 하나는 객체 하나. 아직 받아오기 전에는 "없음"을 뜻하는 null 로 시작한다.
-  // 상세페이지는 본문까지 필요하므로 PostWithContentDto 를 쓴다. 타입 = PostWithContentDto | null
-  const [post, setPost] = useState<PostWithContentDto | null>(null);
-  // 댓글 목록 상태. 초기값이 null 이다. (왜 [] 가 아니라 null 인지는 31강에서)
-  //   null : 아직 불러오는 중
-  //   []   : 다 불러왔는데 댓글이 0개
-  const [postComments, setPostComments] = useState<PostCommentDto[] | null>(null);
-
-  // 글 삭제: DELETE /api/v1/posts/{id}
-  // 본문(body)이 없는 요청이므로 method 만 넘긴다. (apiFetch 는 body 가 없으면 Content-Type 을 붙이지 않는다)
-  const deletePost = (id: number) => {
-    apiFetch(`/api/v1/posts/${id}`, {
-      method: "DELETE",
-    }).then((data) => {
-      alert(data.msg); // "1번 글이 삭제되었습니다."
-
-      // 삭제된 글의 상세페이지는 더 이상 의미가 없으므로 목록으로 이동한다.
-      // replace : 방문 기록에서 지금 페이지를 교체 → 뒤로가기로 삭제된 글 페이지에 다시 오지 않는다.
-      router.replace("/posts");
-    });
-  };
-
+// 댓글 작성 + 댓글 목록 영역을 담당하는 컴포넌트 (037-1)
+// Page 컴포넌트가 너무 길어져서, 화면의 한 덩어리(댓글 영역)를 별도 컴포넌트로 떼어 냈다.
+// 같은 파일 안에 두어도 된다. export 하지 않았으므로 이 파일 안에서만 쓰인다.
+//
+// props : 부모(Page)가 넘겨준 값들. 함수 매개변수에서 바로 구조분해해서 받는다.
+// 타입은 { id: number; ... } 처럼 객체 모양으로 적는다.
+//   setPostComments : 부모의 상태 변경 함수. 이것을 받아야 자식에서 댓글을 추가/삭제했을 때 부모 상태가 바뀐다.
+function PostCommentWriteAndList({
+  id,
+  postComments,
+  setPostComments,
+}: {
+  id: number;
+  postComments: PostCommentDto[] | null;
+  setPostComments: (postComments: PostCommentDto[]) => void;
+}) {
   // 댓글 삭제: DELETE /api/v1/posts/{글번호}/comments/{댓글번호}
   // 댓글은 글에 속해 있으므로 URL 도 글 아래에 댓글이 있는 계층 구조다.
   const deleteComment = (id: number, commentId: number) => {
@@ -117,6 +99,99 @@ export default function Page() {
     });
   };
 
+  return (
+    <>
+      <h2>댓글 작성</h2>
+
+      {/* flex gap-2 : 입력칸과 작성 버튼을 가로로 나란히 */}
+      <form className="flex gap-2" onSubmit={handleCommentWriteFormSubmit}>
+        {/* maxLength={100} : 100자 넘게는 입력 자체가 안 된다 (최대 길이는 입력 단계에서 막는다)
+            rows={5} : 기본 높이 5줄 */}
+        <textarea
+          className="border p-2 rounded"
+          name="content"
+          placeholder="댓글 내용"
+          maxLength={100}
+          rows={5}
+        />
+        <button className="p-2 rounded border" type="submit">
+          작성
+        </button>
+      </form>
+
+      <hr className="my-2" />
+
+      <h2>댓글 목록</h2>
+
+      {/* 상태가 3가지라서 3갈래로 나눠 그린다. */}
+      {/* 1) null → 아직 불러오는 중 */}
+      {postComments == null && <div>댓글 로딩중...</div>}
+
+      {/* 2) 빈 배열 → 불러왔지만 댓글이 없음 */}
+      {postComments != null && postComments.length == 0 && (
+        <div>댓글이 없습니다.</div>
+      )}
+
+      {/* 3) 원소가 있는 배열 → 목록 출력 */}
+      {postComments != null && postComments.length > 0 && (
+        <ul>
+          {postComments.map((comment) => (
+            // py-2 : 위아래 안쪽 여백
+            <li key={comment.id} className="py-2">
+              {comment.content}
+              {/* ml-2 : 왼쪽 바깥 여백(댓글 내용과 간격)
+                  글 삭제와 같은 패턴: confirm 이 true 일 때만 && 뒤의 deleteComment 실행 */}
+              <button
+                className="ml-2 p-2 rounded border"
+                onClick={() =>
+                  confirm(`${comment.id}번 댓글을 정말로 삭제하시겠습니까?`) &&
+                  deleteComment(id, comment.id)
+                }
+              >
+                삭제
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
+  );
+}
+
+// src/app/posts/[id]/page.tsx == "/posts/1", "/posts/2" ... 주소(글 상세페이지)
+// 폴더 이름을 [id] 처럼 대괄호로 감싸면 "동적 세그먼트"가 된다. /posts/ 뒤에 오는 어떤 값이든 이 페이지가 처리한다.
+export default function Page() {
+  const router = useRouter();
+
+  // /posts/3 으로 접속하면 { id: "3" } 을 돌려준다. 폴더 이름 [id] 가 키 이름이 된다.
+  // URL 은 문자열이므로 path 파라미터 값의 타입은 항상 string 이다.
+  // { id: idStr } : 구조분해할당하면서 이름을 idStr 로 바꿔 받는다. (문자열이라는 것을 이름으로 표시)
+  const { id: idStr } = useParams<{ id: string }>();
+  // 글 번호는 숫자로 다루는 것이 자연스러우므로 Number() 로 변환한다. "3" → 3
+  const id = Number(idStr);
+
+  // 글 하나는 객체 하나. 아직 받아오기 전에는 "없음"을 뜻하는 null 로 시작한다.
+  // 상세페이지는 본문까지 필요하므로 PostWithContentDto 를 쓴다. 타입 = PostWithContentDto | null
+  const [post, setPost] = useState<PostWithContentDto | null>(null);
+  // 댓글 목록 상태. 초기값이 null 이다. (왜 [] 가 아니라 null 인지는 31강에서)
+  //   null : 아직 불러오는 중
+  //   []   : 다 불러왔는데 댓글이 0개
+  const [postComments, setPostComments] = useState<PostCommentDto[] | null>(null);
+
+  // 글 삭제: DELETE /api/v1/posts/{id}
+  // 본문(body)이 없는 요청이므로 method 만 넘긴다. (apiFetch 는 body 가 없으면 Content-Type 을 붙이지 않는다)
+  const deletePost = (id: number) => {
+    apiFetch(`/api/v1/posts/${id}`, {
+      method: "DELETE",
+    }).then((data) => {
+      alert(data.msg); // "1번 글이 삭제되었습니다."
+
+      // 삭제된 글의 상세페이지는 더 이상 의미가 없으므로 목록으로 이동한다.
+      // replace : 방문 기록에서 지금 페이지를 교체 → 뒤로가기로 삭제된 글 페이지에 다시 오지 않는다.
+      router.replace("/posts");
+    });
+  };
+
   useEffect(() => {
     // 글 단건조회 API: GET /api/v1/posts/{id}
     // 백틱(`) 템플릿 리터럴로 URL 에 id 를 끼워 넣는다.
@@ -182,59 +257,13 @@ export default function Page() {
       {/* hr : 구분선, my-2 : 위아래 바깥 여백 */}
       <hr className="my-2" />
 
-      <h2>댓글 작성</h2>
-
-      {/* flex gap-2 : 입력칸과 작성 버튼을 가로로 나란히 */}
-      <form className="flex gap-2" onSubmit={handleCommentWriteFormSubmit}>
-        {/* maxLength={100} : 100자 넘게는 입력 자체가 안 된다 (최대 길이는 입력 단계에서 막는다)
-            rows={5} : 기본 높이 5줄 */}
-        <textarea
-          className="border p-2 rounded"
-          name="content"
-          placeholder="댓글 내용"
-          maxLength={100}
-          rows={5}
-        />
-        <button className="p-2 rounded border" type="submit">
-          작성
-        </button>
-      </form>
-
-      <hr className="my-2" />
-
-      <h2>댓글 목록</h2>
-
-      {/* 상태가 3가지라서 3갈래로 나눠 그린다. */}
-      {/* 1) null → 아직 불러오는 중 */}
-      {postComments == null && <div>댓글 로딩중...</div>}
-
-      {/* 2) 빈 배열 → 불러왔지만 댓글이 없음 */}
-      {postComments != null && postComments.length == 0 && (
-        <div>댓글이 없습니다.</div>
-      )}
-
-      {/* 3) 원소가 있는 배열 → 목록 출력 */}
-      {postComments != null && postComments.length > 0 && (
-        <ul>
-          {postComments.map((comment) => (
-            // py-2 : 위아래 안쪽 여백
-            <li key={comment.id} className="py-2">
-              {comment.content}
-              {/* ml-2 : 왼쪽 바깥 여백(댓글 내용과 간격)
-                  글 삭제와 같은 패턴: confirm 이 true 일 때만 && 뒤의 deleteComment 실행 */}
-              <button
-                className="ml-2 p-2 rounded border"
-                onClick={() =>
-                  confirm(`${comment.id}번 댓글을 정말로 삭제하시겠습니까?`) &&
-                  deleteComment(id, comment.id)
-                }
-              >
-                삭제
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+      {/* 댓글 작성 폼과 댓글 목록은 PostCommentWriteAndList 컴포넌트로 분리했다. (037-1)
+          자식 컴포넌트에 필요한 값은 props 로 넘긴다. 상태(postComments)는 여전히 Page 가 갖고 있다. */}
+      <PostCommentWriteAndList
+        id={id}
+        postComments={postComments}
+        setPostComments={setPostComments}
+      />
     </>
   );
 }

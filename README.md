@@ -1,6 +1,6 @@
 # nextjs-board-front
 
-슬로그 강의 **[스프링부트, Next.js REST API 연동](https://www.slog.gg/p/14175)** 1~36강을 따라 만든 Next.js + TypeScript 게시판 프론트엔드입니다.
+슬로그 강의 **[스프링부트, Next.js REST API 연동](https://www.slog.gg/p/14175)** 1~37강을 따라 만든 Next.js + TypeScript 게시판 프론트엔드입니다.
 
 - 백엔드: [jhs512/p-14172-2 (tag 068)](https://github.com/jhs512/p-14172-2/tree/068)
 - 강의 정답 리포: [jhs512/p-14175-3](https://github.com/jhs512/p-14175-3)
@@ -74,6 +74,7 @@ pnpm dev                     # http://localhost:3000
 - [036-1 프로미스 체인에 catch 추가 (HTTP 에러는 catch로 가지 않음)](#036-1-프로미스-체인에-catch-추가-http-에러는-catch로-가지-않음)
 - [036-2 apiFetch에서 HTTP 에러 응답이면 예외 던지기](#036-2-apifetch에서-http-에러-응답이면-예외-던지기)
 - [036-3 응답 객체를 그대로 던져 resultCode와 msg 사용](#036-3-응답-객체를-그대로-던져-resultcode와-msg-사용)
+- [037-1 PostCommentWriteAndList 컴포넌트 도입](#037-1-postcommentwriteandlist-컴포넌트-도입)
 
 ---
 
@@ -1786,4 +1787,73 @@ apiFetch(`/api/v1/posts`, { method: "POST", body: JSON.stringify({ ... }) })
   .catch((error) => {
     alert(`${error.resultCode} : ${error.msg}`);
   });
+```
+
+---
+
+## 037-1 PostCommentWriteAndList 컴포넌트 도입
+
+- 변경 내용: [commit/037-1](https://github.com/zoek1211/nextjs-board-front/commit/037-1) · 전체 코드: [tree/037-1](https://github.com/zoek1211/nextjs-board-front/tree/037-1)
+- 강의: 37강, 상세페이지 리팩토링 (1단계: PostCommentWriteAndList 컴포넌트 도입)
+
+### 핵심 내용
+
+- 글 상세 `Page` 컴포넌트 하나에 글 조회, 글 삭제, 댓글 조회/작성/삭제가 모두 들어 있어서 너무 길어졌다.
+- 화면의 한 덩어리인 **댓글 영역(작성 폼 + 목록)** 을 `PostCommentWriteAndList` 컴포넌트로 떼어 낸다.
+  - 댓글 삭제 함수 `deleteComment`, 댓글 작성 폼 처리 함수 `handleCommentWriteFormSubmit`, 댓글 JSX 가 함께 옮겨 갔다.
+  - 같은 파일 안에 함수로 두고 `export` 하지 않는다. 이 페이지에서만 쓰는 컴포넌트이기 때문이다.
+- **상태는 여전히 부모(`Page`)가 갖는다.** 자식은 필요한 값을 **props** 로 받는다.
+  - `id`: 글 번호 (댓글 API 주소에 필요)
+  - `postComments`: 댓글 목록 상태
+  - `setPostComments`: 부모의 상태 변경 함수. 이것을 받아야 자식에서 댓글을 추가/삭제할 때 부모 상태가 바뀌고 화면이 다시 그려진다.
+- props 타입은 매개변수 뒤에 `{ id: number; postComments: ...; ... }` 처럼 객체 모양으로 적는다.
+- 동작은 바뀌지 않는다. 브라우저에서 확인한 결과(1번 글): 댓글 2개 → 작성하면 3개 → 삭제하면 2개, 모두 새로고침 없이 반영된다.
+
+### VS Code 팁 (37강)
+
+- **팁 1, 기능 검색해서 실행:** `F1` 을 누르고 명령 관련 키워드를 입력한 뒤 엔터. 메뉴를 찾아다니지 않아도 된다.
+- **팁 2, 새 파일 만들기:** 탐색기에서 폴더를 우클릭하고 `New File` 에 포커스가 간 상태에서 `엔터` 대신 **`스페이스바`** 를 누른다. (마우스로 클릭해도 된다)
+
+### 코드 발췌
+
+`src/app/posts/[id]/page.tsx`
+
+```tsx
+function PostCommentWriteAndList({
+  id,
+  postComments,
+  setPostComments,
+}: {
+  id: number;
+  postComments: PostCommentDto[] | null;
+  setPostComments: (postComments: PostCommentDto[]) => void;
+}) {
+  const deleteComment = (id: number, commentId: number) => { ... };
+  const handleCommentWriteFormSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => { ... };
+
+  return (
+    <>
+      <h2>댓글 작성</h2>
+      {/* 작성 폼 */}
+      <h2>댓글 목록</h2>
+      {/* 목록 */}
+    </>
+  );
+}
+
+export default function Page() {
+  // ...
+  return (
+    <>
+      {/* 글 내용, 삭제/수정 버튼 */}
+      <hr className="my-2" />
+
+      <PostCommentWriteAndList
+        id={id}
+        postComments={postComments}
+        setPostComments={setPostComments}
+      />
+    </>
+  );
+}
 ```
