@@ -124,10 +124,12 @@ export default function Page() {
       .then(setPost)
       // 프로미스 체인 중간(then)에서 예외가 나면 남은 then 은 건너뛰고 catch 로 바로 온다.
       // 주의: fetch 는 "응답을 받기만 하면" 성공으로 본다. 404, 500 같은 HTTP 에러 응답도 성공이다.
-      //       그래서 없는 글(/posts/999999)을 열어도 이 catch 는 실행되지 않는다. (네트워크 끊김 같은 경우에만 실행)
-      //       → HTTP 에러도 catch 로 보내려면 체인 앞부분에서 직접 예외를 던져야 한다. (036-2)
+      //       그래서 apiFetch 가 체인 앞부분에서 res.ok 를 보고 직접 예외를 던진다. (036-2)
+      //       없는 글(/posts/999999)을 열면 setPost 는 건너뛰고 여기로 온다.
+      // error : apiFetch 가 던진 응답 객체 { resultCode, msg, data } (036-3)
+      //         → "404-1 : 해당 데이터가 존재하지 않습니다." 처럼 결과 코드와 메시지를 함께 보여 준다.
       .catch((error) => {
-        alert(error.message);
+        alert(`${error.resultCode} : ${error.msg}`);
       });
 
     // 댓글 다건조회 API: GET /api/v1/posts/{id}/comments
@@ -135,7 +137,7 @@ export default function Page() {
     apiFetch(`/api/v1/posts/${id}/comments`)
       .then(setPostComments)
       .catch((error) => {
-        alert(error.message);
+        alert(`${error.resultCode} : ${error.msg}`);
       });
     // 의존성 배열에 id 를 넣었다. → id 가 바뀌면(다른 글로 이동하면) 이 effect 가 다시 실행되어 새 글을 불러온다.
   }, [id]);

@@ -73,6 +73,7 @@ pnpm dev                     # http://localhost:3000
 - [035 유효성 체크를 세밀하게](#035-유효성-체크를-세밀하게)
 - [036-1 프로미스 체인에 catch 추가 (HTTP 에러는 catch로 가지 않음)](#036-1-프로미스-체인에-catch-추가-http-에러는-catch로-가지-않음)
 - [036-2 apiFetch에서 HTTP 에러 응답이면 예외 던지기](#036-2-apifetch에서-http-에러-응답이면-예외-던지기)
+- [036-3 응답 객체를 그대로 던져 resultCode와 msg 사용](#036-3-응답-객체를-그대로-던져-resultcode와-msg-사용)
 
 ---
 
@@ -1744,4 +1745,45 @@ return fetch(`${NEXT_PUBLIC_API_BASE_URL}${url}`, options).then((res) => {
 
   return res.json();
 });
+```
+
+---
+
+## 036-3 응답 객체를 그대로 던져 resultCode와 msg 사용
+
+- 변경 내용: [commit/036-3](https://github.com/zoek1211/nextjs-board-front/commit/036-3) · 전체 코드: [tree/036-3](https://github.com/zoek1211/nextjs-board-front/tree/036-3)
+- 강의: 36강 (3단계: Error 대신 응답 객체를 그대로 던져 resultCode, msg 사용)
+
+### 핵심 내용
+
+- 036-2 처럼 `throw new Error(errorData.msg)` 로 던지면 `catch` 에서는 `error.message`(= msg)만 쓸 수 있다.
+- 자바스크립트는 `Error` 가 아닌 값도 `throw` 할 수 있다. 응답 객체 `{ resultCode, msg, data }` 를 **그대로** 던지면, `catch` 에서 `error.resultCode` 와 `error.msg` 를 모두 쓸 수 있다.
+- 글 작성 페이지에도 `.catch` 를 달았다. 프론트 유효성 체크를 통과해도 서버가 거절할 수 있기 때문이다.
+- 브라우저에서 확인한 결과:
+  - `/posts/999999` → "404-1 : 해당 데이터가 존재하지 않습니다."
+  - 글쓰기에서 `maxLength` 를 우회해 101자 제목을 보내면 → "400-1 : title-Size-size must be between 2 and 100", 페이지는 이동하지 않는다.
+
+### 코드 발췌
+
+`src/lib/backend/client.ts`
+
+```ts
+if (!res.ok) {
+  return res.json().then((errorData) => {
+    throw errorData;   // { resultCode, msg, data } 를 그대로 던진다
+  });
+}
+```
+
+`src/app/posts/write/page.tsx`
+
+```tsx
+apiFetch(`/api/v1/posts`, { method: "POST", body: JSON.stringify({ ... }) })
+  .then((data) => {
+    alert(data.msg);
+    router.replace(`/posts/${data.data.id}`);
+  })
+  .catch((error) => {
+    alert(`${error.resultCode} : ${error.msg}`);
+  });
 ```

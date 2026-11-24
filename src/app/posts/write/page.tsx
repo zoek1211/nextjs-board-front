@@ -90,6 +90,11 @@ export default function Page() {
         // router.replace : 현재 페이지(글쓰기)를 방문 기록에서 "교체" → 뒤로가기 하면 글쓰기 폼을 건너뛰고 그 이전 페이지로 간다.
         // 이미 제출한 폼으로 돌아가 같은 글을 또 저장하는 실수를 막기 위해 replace 를 쓴다.
         router.replace(`/posts/${data.data.id}`);
+      })
+      // 작성 실패(예: 백엔드 유효성 체크에 걸림 → 400) 시 apiFetch 가 던진 응답 객체가 여기로 온다.
+      // 프론트 유효성 체크를 통과했더라도 서버가 거절할 수 있으므로 실패 처리도 해 둔다.
+      .catch((error) => {
+        alert(`${error.resultCode} : ${error.msg}`);
       });
   };
 

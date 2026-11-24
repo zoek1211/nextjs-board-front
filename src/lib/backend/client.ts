@@ -41,8 +41,10 @@ export const apiFetch = (url: string, options?: RequestInit) => {
       // 에러 응답 본문에도 { resultCode, msg } 가 들어 있으므로 json 으로 읽은 뒤 던진다.
       // then 안에서 throw 하면 그 프로미스가 실패(reject) 상태가 된다.
       return res.json().then((errorData) => {
-        // Error 객체로 감싸서 던지면 catch 에서는 error.message 로 msg 를 꺼낸다.
-        throw new Error(errorData.msg);
+        // 036-2 에서는 throw new Error(errorData.msg) 로 던졌다. → catch 에서 msg 만 쓸 수 있었다.
+        // 응답 객체({ resultCode, msg, data })를 그대로 던지면 catch 에서 resultCode 와 msg 를 모두 쓸 수 있다.
+        // 자바스크립트는 Error 가 아닌 값도 throw 할 수 있다.
+        throw errorData;
       });
     }
 
