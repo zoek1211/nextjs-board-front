@@ -41,13 +41,30 @@ export default function Page() {
       return; // 여기서 함수 종료 → 아래 코드(저장)는 실행되지 않는다 (가드 클로즈)
     }
 
+    // 유효성 체크 1-2: 제목 길이
+    // "비어 있지 않음"만 보면 "a" 같은 한 글자 제목도 통과한다.
+    // 체크를 세밀하게 할수록 잘못된 값이 서버까지 가지 않는다. (백엔드도 2자 이상만 허용)
+    // 빈 값 체크와 길이 체크를 나누면, 상황에 맞는 메시지를 보여 줄 수 있다.
+    if (titleInput.value.length < 2) {
+      alert("제목을 2자 이상 입력해주세요.");
+      titleInput.focus();
+      return;
+    }
+
     // 유효성 체크 2: 내용
     contentTextarea.value = contentTextarea.value.trim();
 
     if (contentTextarea.value.length === 0) {
       alert("내용을 입력해주세요.");
       contentTextarea.focus();
-      
+
+      return;
+    }
+
+    // 유효성 체크 2-2: 내용 길이
+    if (contentTextarea.value.length < 2) {
+      alert("내용을 2자 이상 입력해주세요.");
+      contentTextarea.focus();
       return;
     }
 
@@ -89,11 +106,16 @@ export default function Page() {
           type="text"
           name="title"
           placeholder="제목"
+          maxLength={100}
         />
+        {/* maxLength : 브라우저가 그 이상 입력되지 않게 막는다. (최대 길이는 입력 단계에서, 최소 길이는 제출 시 체크)
+            rows : textarea 의 기본 높이(줄 수) */}
         <textarea
           className="border p-2 rounded"
           name="content"
           placeholder="내용"
+          maxLength={5000}
+          rows={10}
         />
         {/* type="submit" : 누르면 form 의 submit 이벤트가 발생한다 */}
         <button className="border p-2 rounded" type="submit">

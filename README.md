@@ -1,6 +1,6 @@
 # nextjs-board-front
 
-슬로그 강의 **[스프링부트, Next.js REST API 연동](https://www.slog.gg/p/14175)** 1~34강을 따라 만든 Next.js + TypeScript 게시판 프론트엔드입니다.
+슬로그 강의 **[스프링부트, Next.js REST API 연동](https://www.slog.gg/p/14175)** 1~35강을 따라 만든 Next.js + TypeScript 게시판 프론트엔드입니다.
 
 - 백엔드: [jhs512/p-14172-2 (tag 068)](https://github.com/jhs512/p-14172-2/tree/068)
 - 강의 정답 리포: [jhs512/p-14175-3](https://github.com/jhs512/p-14175-3)
@@ -70,6 +70,7 @@ pnpm dev                     # http://localhost:3000
 - [033 댓글 삭제 후 상태 갱신으로 UI 반영](#033-댓글-삭제-후-상태-갱신으로-ui-반영)
 - [034-1 댓글 작성 폼과 작성 API 호출](#034-1-댓글-작성-폼과-작성-api-호출)
 - [034-2 작성한 댓글을 목록에 바로 반영](#034-2-작성한-댓글을-목록에-바로-반영)
+- [035 유효성 체크를 세밀하게](#035-유효성-체크를-세밀하게)
 
 ---
 
@@ -1631,4 +1632,54 @@ const handleCommentWriteFormSubmit = (e: React.SyntheticEvent<HTMLFormElement>) 
 
   setPostComments([...postComments, data.data]);   // 새 배열 = 기존 + 새 댓글
 });
+```
+
+---
+
+## 035 유효성 체크를 세밀하게
+
+- 변경 내용: [commit/035](https://github.com/zoek1211/nextjs-board-front/commit/035) · 전체 코드: [tree/035](https://github.com/zoek1211/nextjs-board-front/tree/035)
+- 강의: 35강, 유효성 체크는 세밀할수록 좋다
+
+### 핵심 내용
+
+- 지금까지는 "비어 있는지"만 체크했다. 그래서 `a` 같은 한 글자 제목도 서버로 보내졌고, 백엔드가 거절했다.
+- 백엔드 규칙에 맞춰 프론트에서도 **길이**를 체크한다.
+  - 글 제목 2~100자, 글 내용 2~5000자, 댓글 내용 2~100자 (백엔드 `@Size(min = 2, max = ...)`)
+- **최소 길이**는 제출할 때 `if (value.length < 2)` 로 체크하고 `alert` + `focus()` 후 `return` 한다(가드 클로즈).
+  - "빈 값" 체크와 "너무 짧음" 체크를 나누면 상황에 맞는 메시지를 보여 줄 수 있다.
+- **최대 길이**는 입력 단계에서 `maxLength` 속성으로 막는다. 브라우저가 그 이상 입력되지 않게 한다.
+- `rows` 는 `textarea` 의 기본 높이(줄 수)다.
+- 프론트의 유효성 체크는 사용자 편의를 위한 것이다. 최종 검증은 여전히 백엔드가 한다.
+- 브라우저에서 확인한 결과: 제목 `a` → "제목을 2자 이상 입력해주세요.", 내용 `b` → "내용을 2자 이상 입력해주세요.", 댓글 `x` → "댓글 내용을 2자 이상 입력해주세요."
+
+### 코드 발췌
+
+`src/app/posts/write/page.tsx`
+
+```tsx
+if (titleInput.value.length < 2) {
+  alert("제목을 2자 이상 입력해주세요.");
+  titleInput.focus();
+  return;
+}
+
+// ...
+
+<input className="border p-2 rounded" type="text" name="title" placeholder="제목" maxLength={100} />
+<textarea className="border p-2 rounded" name="content" placeholder="내용" maxLength={5000} rows={10} />
+```
+
+`src/app/posts/[id]/page.tsx` (댓글 작성 폼)
+
+```tsx
+if (contentTextarea.value.length < 2) {
+  alert("댓글 내용을 2자 이상 입력해주세요.");
+  contentTextarea.focus();
+  return;
+}
+
+// ...
+
+<textarea className="border p-2 rounded" name="content" placeholder="댓글 내용" maxLength={100} rows={5} />
 ```

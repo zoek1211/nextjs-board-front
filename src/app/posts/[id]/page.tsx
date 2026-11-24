@@ -86,6 +86,14 @@ export default function Page() {
       return;
     }
 
+    // 유효성 체크 2: 길이. 백엔드 댓글 규칙(2자 이상 100자 이하)과 맞춘다.
+    // 빈 값과 너무 짧은 값을 나눠 체크하면 사용자에게 더 정확한 안내를 할 수 있다.
+    if (contentTextarea.value.length < 2) {
+      alert("댓글 내용을 2자 이상 입력해주세요.");
+      contentTextarea.focus();
+      return;
+    }
+
     // 댓글 작성 API: POST /api/v1/posts/{글번호}/comments
     // 어느 글의 댓글인지는 URL 에 들어 있으므로, 본문에는 content 만 보낸다.
     apiFetch(`/api/v1/posts/${id}/comments`, {
@@ -166,10 +174,14 @@ export default function Page() {
 
       {/* flex gap-2 : 입력칸과 작성 버튼을 가로로 나란히 */}
       <form className="flex gap-2" onSubmit={handleCommentWriteFormSubmit}>
+        {/* maxLength={100} : 100자 넘게는 입력 자체가 안 된다 (최대 길이는 입력 단계에서 막는다)
+            rows={5} : 기본 높이 5줄 */}
         <textarea
           className="border p-2 rounded"
           name="content"
           placeholder="댓글 내용"
+          maxLength={100}
+          rows={5}
         />
         <button className="p-2 rounded border" type="submit">
           작성
