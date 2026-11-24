@@ -72,6 +72,7 @@ pnpm dev                     # http://localhost:3000
 - [034-2 작성한 댓글을 목록에 바로 반영](#034-2-작성한-댓글을-목록에-바로-반영)
 - [035 유효성 체크를 세밀하게](#035-유효성-체크를-세밀하게)
 - [036-1 프로미스 체인에 catch 추가 (HTTP 에러는 catch로 가지 않음)](#036-1-프로미스-체인에-catch-추가-http-에러는-catch로-가지-않음)
+- [036-2 apiFetch에서 HTTP 에러 응답이면 예외 던지기](#036-2-apifetch에서-http-에러-응답이면-예외-던지기)
 
 ---
 
@@ -1710,4 +1711,37 @@ apiFetch(`/api/v1/posts/${id}`)
   .catch((error) => {
     alert(error.message);   // 404 응답에서는 실행되지 않는다!
   });
+```
+
+---
+
+## 036-2 apiFetch에서 HTTP 에러 응답이면 예외 던지기
+
+- 변경 내용: [commit/036-2](https://github.com/zoek1211/nextjs-board-front/commit/036-2) · 전체 코드: [tree/036-2](https://github.com/zoek1211/nextjs-board-front/tree/036-2)
+- 강의: 36강 (2단계: 체인 앞부분에서 HTTP 응답 코드를 보고 예외 던지기)
+
+### 핵심 내용
+
+- 036-1 에서 본 문제: HTTP 에러 응답은 `catch` 로 가지 않는다.
+- 해결: 모든 요청이 거치는 **`apiFetch` 의 첫 `then`** 에서 응답 코드를 검사한다.
+  - `res.ok` 는 응답 코드가 200~299 이면 `true` 다.
+  - `false` 이면 에러 응답 본문(`{ resultCode, msg }`)을 `json()` 으로 읽은 뒤 `throw new Error(errorData.msg)` 로 예외를 던진다.
+- `then` 안에서 `throw` 하면 그 프로미스는 실패 상태가 된다. 그래서 호출한 쪽의 다음 `then`(`setPost`)은 건너뛰고 `catch` 가 실행된다.
+- `apiFetch` 한 곳만 고쳤는데 이를 쓰는 모든 페이지에 적용된다. 공용 함수로 모아 둔 효과다(21강).
+- 브라우저에서 확인한 결과: `/posts/999999` 를 열면 "해당 데이터가 존재하지 않습니다." alert 가 뜨고, `setPost` 가 실행되지 않아 화면은 "로딩중..." 으로 남는다.
+
+### 코드 발췌
+
+`src/lib/backend/client.ts`
+
+```ts
+return fetch(`${NEXT_PUBLIC_API_BASE_URL}${url}`, options).then((res) => {
+  if (!res.ok) {
+    return res.json().then((errorData) => {
+      throw new Error(errorData.msg);   // → 호출한 쪽의 catch 로
+    });
+  }
+
+  return res.json();
+});
 ```

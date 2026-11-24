@@ -32,7 +32,20 @@ export const apiFetch = (url: string, options?: RequestInit) => {
     options.headers = headers;
   }
 
-  return fetch(`${NEXT_PUBLIC_API_BASE_URL}${url}`, options).then((res) =>
-    res.json()
-  );
+  return fetch(`${NEXT_PUBLIC_API_BASE_URL}${url}`, options).then((res) => {
+    // fetch 는 404, 500 같은 HTTP 에러 응답도 "성공"으로 본다. (응답을 받기는 했으므로)
+    // res.ok : 응답 코드가 200~299 이면 true. 그 밖이면 false.
+    // → 실패 응답이면 체인의 맨 앞(여기)에서 직접 예외를 던진다.
+    //   그러면 이후의 then(setPost 등)은 건너뛰고, 호출한 쪽의 catch 로 바로 간다.
+    if (!res.ok) {
+      // 에러 응답 본문에도 { resultCode, msg } 가 들어 있으므로 json 으로 읽은 뒤 던진다.
+      // then 안에서 throw 하면 그 프로미스가 실패(reject) 상태가 된다.
+      return res.json().then((errorData) => {
+        // Error 객체로 감싸서 던지면 catch 에서는 error.message 로 msg 를 꺼낸다.
+        throw new Error(errorData.msg);
+      });
+    }
+
+    return res.json();
+  });
 };
