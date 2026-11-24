@@ -1,6 +1,6 @@
 # nextjs-board-front
 
-슬로그 강의 **[스프링부트, Next.js REST API 연동](https://www.slog.gg/p/14175)** 1~38강을 따라 만든 Next.js + TypeScript 게시판 프론트엔드입니다.
+슬로그 강의 **[스프링부트, Next.js REST API 연동](https://www.slog.gg/p/14175)** 1~39강을 따라 만든 Next.js + TypeScript 게시판 프론트엔드입니다.
 
 - 백엔드: [jhs512/p-14172-2 (tag 068)](https://github.com/jhs512/p-14172-2/tree/068)
 - 강의 정답 리포: [jhs512/p-14175-3](https://github.com/jhs512/p-14175-3)
@@ -78,6 +78,7 @@ pnpm dev                     # http://localhost:3000
 - [037-2 PostInfo 컴포넌트 도입](#037-2-postinfo-컴포넌트-도입)
 - [038-1 usePost 커스텀 훅 도입](#038-1-usepost-커스텀-훅-도입)
 - [038-2 글 삭제 로직을 usePost 훅으로 이동](#038-2-글-삭제-로직을-usepost-훅으로-이동)
+- [039 usePostComments 커스텀 훅 도입](#039-usepostcomments-커스텀-훅-도입)
 
 ---
 
@@ -2022,4 +2023,65 @@ function PostInfo({
 // Page
 const { post, deletePost } = usePost(id);
 <PostInfo post={post} deletePost={deletePost} />
+```
+
+---
+
+## 039 usePostComments 커스텀 훅 도입
+
+- 변경 내용: [commit/039](https://github.com/zoek1211/nextjs-board-front/commit/039) · 전체 코드: [tree/039](https://github.com/zoek1211/nextjs-board-front/tree/039)
+- 강의: 39강, postComments 관련 순수 데이터 로직을 usePostComments 훅으로 분리
+
+### 핵심 내용
+
+- 38강 `usePost` 와 같은 방식으로, 댓글 데이터 로직을 `usePostComments(id)` 훅으로 모은다.
+  - `postComments` 상태 + 댓글 목록 조회 `useEffect`
+  - `deleteComment(id, commentId, onSuccess)`: 삭제 API 호출 → 목록에서 제거 → `onSuccess(data)`
+  - `writeComment(id, content, onSuccess)`: 작성 API 호출 → 목록 끝에 추가 → `onSuccess(data)`
+- **훅은 화면을 모른다.**
+  - `writeComment` 는 textarea 가 아니라 `content` 문자열만 받는다.
+  - alert 를 띄우거나 입력칸을 비우는 일은 `onSuccess` 콜백으로 컴포넌트가 정한다.
+  - `onSuccess: (data: { msg: string }) => void`: 응답 `data` 를 넘겨줘서 컴포넌트가 `data.msg` 를 쓸 수 있다.
+- **`setPostComments` 를 밖으로 내보내지 않는다.** 댓글 목록은 훅이 제공하는 함수로만 바뀐다. 상태를 바꾸는 길이 한곳에 모인다.
+- `PostCommentWriteAndList` 는 `setPostComments` 대신 `deleteComment`, `writeComment` 를 props 로 받는다. 함수 props 타입이 길어졌는데, 이 문제는 42강에서 `ReturnType` 으로 해결한다.
+- 이제 `Page` 에는 `useState`, `useEffect` 가 직접 보이지 않는다. **데이터는 훅이, 화면은 컴포넌트가** 맡는다.
+- 브라우저에서 확인한 결과(1번 글): 댓글 작성 → "13번 댓글이 작성되었습니다.", 목록 3개, 입력칸 비워짐 → 삭제 → "13번 댓글이 삭제되었습니다.", 목록 2개.
+
+### 코드 발췌
+
+`src/app/posts/[id]/page.tsx`
+
+```tsx
+function usePostComments(id: number) {
+  const [postComments, setPostComments] = useState<PostCommentDto[] | null>(null);
+
+  useEffect(() => { /* 댓글 목록 조회 */ }, [id]);
+
+  const deleteComment = (id: number, commentId: number, onSuccess: (data: { msg: string }) => void) => {
+    apiFetch(`/api/v1/posts/${id}/comments/${commentId}`, { method: "DELETE" }).then((data) => {
+      if (postComments == null) return;
+      setPostComments(postComments.filter((c) => c.id != commentId));
+      onSuccess(data);
+    });
+  };
+
+  const writeComment = (id: number, content: string, onSuccess: (data: { msg: string }) => void) => {
+    apiFetch(`/api/v1/posts/${id}/comments`, { method: "POST", body: JSON.stringify({ content }) }).then((data) => {
+      if (postComments == null) return;
+      setPostComments([...postComments, data.data]);
+      onSuccess(data);
+    });
+  };
+
+  return { postComments, deleteComment, writeComment };
+}
+
+// PostCommentWriteAndList 안
+writeComment(id, contentTextarea.value, (data) => {
+  alert(data.msg);
+  contentTextarea.value = "";
+});
+
+// Page
+const { postComments, deleteComment, writeComment } = usePostComments(id);
 ```

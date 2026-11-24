@@ -57,6 +57,91 @@ function usePost(id: number) {
   };
 }
 
+// usePostComments : 한 글의 댓글 목록에 관한 "순수 데이터 로직"을 모아 둔 커스텀 훅 (039)
+// usePost(38강)와 같은 방식이다. 상태(postComments) + 불러오기 + 삭제 + 작성을 한곳에 모은다.
+// 화면에서 할 일(alert, 입력칸 비우기)은 onSuccess 콜백으로 호출한 쪽에 맡긴다.
+function usePostComments(id: number) {
+  // 댓글 목록 상태. 초기값이 null 이다. (왜 [] 가 아니라 null 인지는 31강에서)
+  //   null : 아직 불러오는 중
+  //   []   : 다 불러왔는데 댓글이 0개
+  const [postComments, setPostComments] = useState<PostCommentDto[] | null>(
+    null
+  );
+
+  useEffect(() => {
+    // 댓글 다건조회 API: GET /api/v1/posts/{id}/comments
+    // 글 조회(usePost)와 댓글 조회는 서로 기다릴 필요가 없으므로 동시에 요청한다. (먼저 도착한 쪽부터 화면에 반영)
+    apiFetch(`/api/v1/posts/${id}/comments`)
+      .then(setPostComments)
+      .catch((error) => {
+        alert(`${error.resultCode} : ${error.msg}`);
+      });
+    // 의존성 배열에 id 를 넣었다. → id 가 바뀌면(다른 글로 이동하면) 이 effect 가 다시 실행되어 새 댓글 목록을 불러온다.
+  }, [id]);
+
+  // 댓글 삭제: DELETE /api/v1/posts/{글번호}/comments/{댓글번호}
+  // 댓글은 글에 속해 있으므로 URL 도 글 아래에 댓글이 있는 계층 구조다.
+  // onSuccess: (data: { msg: string }) => void
+  //   성공 후 할 일을 받는 콜백. 응답 data 를 넘겨줘서 호출한 쪽이 data.msg 로 alert 를 띄울 수 있다.
+  const deleteComment = (
+    id: number,
+    commentId: number,
+    onSuccess: (data: { msg: string }) => void
+  ) => {
+    apiFetch(`/api/v1/posts/${id}/comments/${commentId}`, {
+      method: "DELETE",
+    }).then((data) => {
+      // 서버에서 지운 것을 화면에도 반영하려면 상태(postComments)를 바꿔야 한다.
+      // (32강에서는 이 부분이 없어서 새로고침해야 사라졌다)
+
+      // 타입 좁히기용 가드: 댓글 목록이 없을 때는 할 일이 없다.
+      if (postComments == null) return;
+
+      // filter : 조건이 true 인 원소만 모은 "새 배열"을 만든다. → 삭제한 댓글(commentId)만 빠진 배열
+      // 리액트 상태는 기존 배열을 직접 고치지(splice 등) 말고, 새 배열을 만들어 set 해야 변경을 알아챈다.
+      setPostComments(postComments.filter((c) => c.id != commentId));
+
+      // 데이터 처리가 끝난 뒤, 화면 쪽 후처리(alert 등)를 실행한다.
+      onSuccess(data);
+    });
+  };
+
+  // 댓글 작성 API: POST /api/v1/posts/{글번호}/comments
+  // 어느 글의 댓글인지는 URL 에 들어 있으므로, 본문에는 content 만 보낸다.
+  // 폼(textarea)에 대해서는 모른다. 내용(content) 문자열만 받는다. → 훅은 화면과 분리된다.
+  const writeComment = (
+    id: number,
+    content: string,
+    onSuccess: (data: { msg: string }) => void
+  ) => {
+    apiFetch(`/api/v1/posts/${id}/comments`, {
+      method: "POST",
+      // { content } : { content: content } 의 줄임 표기 (속성 이름과 변수 이름이 같을 때)
+      body: JSON.stringify({
+        content,
+      }),
+    }).then((data) => {
+      // 새 댓글을 화면 목록에도 반영한다. (034-1 에서는 이 부분이 없어서 새로고침해야 보였다)
+      if (postComments == null) return;
+
+      // data.data : 서버가 방금 만든 댓글(PostCommentDto). id, 작성일 등이 서버에서 정해져 돌아온다.
+      // [...postComments, data.data] : 기존 배열을 펼치고(스프레드) 맨 뒤에 새 댓글을 붙인 "새 배열"
+      // push 로 기존 배열을 직접 고치면 리액트가 변경을 알아채지 못하므로 항상 새 배열을 만들어 set 한다.
+      setPostComments([...postComments, data.data]);
+
+      onSuccess(data);
+    });
+  };
+
+  // setPostComments 는 밖으로 내보내지 않는다.
+  // → 댓글 목록은 이 훅이 제공하는 함수(deleteComment, writeComment)로만 바뀐다. 상태를 바꾸는 길이 한곳으로 모인다.
+  return {
+    postComments,
+    deleteComment,
+    writeComment,
+  };
+}
+
 // 글 정보(번호, 제목, 본문) + 삭제/수정 버튼을 담당하는 컴포넌트 (037-2)
 // post 의 타입이 PostWithContentDto | null 이 아니라 PostWithContentDto 다.
 //   → 부모(Page)가 가드 클로즈로 null 을 걸러 낸 뒤에만 이 컴포넌트를 그리기 때문에, 여기서는 null 체크가 필요 없다.
@@ -119,36 +204,27 @@ function PostInfo({
 //
 // props : 부모(Page)가 넘겨준 값들. 함수 매개변수에서 바로 구조분해해서 받는다.
 // 타입은 { id: number; ... } 처럼 객체 모양으로 적는다.
-//   setPostComments : 부모의 상태 변경 함수. 이것을 받아야 자식에서 댓글을 추가/삭제했을 때 부모 상태가 바뀐다.
+//   039 부터는 setPostComments 대신 usePostComments 훅의 함수(deleteComment, writeComment)를 받는다.
+//   함수 props 의 타입도 매개변수와 반환 타입까지 적어 준다. (타입이 길어지는 문제는 42강에서 ReturnType 으로 해결)
 function PostCommentWriteAndList({
   id,
   postComments,
-  setPostComments,
+  deleteComment,
+  writeComment,
 }: {
   id: number;
   postComments: PostCommentDto[] | null;
-  setPostComments: (postComments: PostCommentDto[]) => void;
+  deleteComment: (
+    id: number,
+    commentId: number,
+    onSuccess: (data: { msg: string }) => void
+  ) => void;
+  writeComment: (
+    id: number,
+    content: string,
+    onSuccess: (data: { msg: string }) => void
+  ) => void;
 }) {
-  // 댓글 삭제: DELETE /api/v1/posts/{글번호}/comments/{댓글번호}
-  // 댓글은 글에 속해 있으므로 URL 도 글 아래에 댓글이 있는 계층 구조다.
-  const deleteComment = (id: number, commentId: number) => {
-    apiFetch(`/api/v1/posts/${id}/comments/${commentId}`, {
-      method: "DELETE",
-    }).then((data) => {
-      alert(data.msg); // "1번 댓글이 삭제되었습니다."
-
-      // 서버에서 지운 것을 화면에도 반영하려면 상태(postComments)를 바꿔야 한다.
-      // (32강에서는 이 부분이 없어서 새로고침해야 사라졌다)
-
-      // 타입 좁히기용 가드: 댓글 목록이 없을 때는 할 일이 없다.
-      if (postComments == null) return;
-
-      // filter : 조건이 true 인 원소만 모은 "새 배열"을 만든다. → 삭제한 댓글(commentId)만 빠진 배열
-      // 리액트 상태는 기존 배열을 직접 고치지(splice 등) 말고, 새 배열을 만들어 set 해야 변경을 알아챈다.
-      setPostComments(postComments.filter((c) => c.id != commentId));
-    });
-  };
-
   // 댓글 작성 폼 제출 처리. 글쓰기 폼(22~25강)과 같은 패턴이다.
   const handleCommentWriteFormSubmit = (
     e: React.SyntheticEvent<HTMLFormElement>
@@ -179,26 +255,11 @@ function PostCommentWriteAndList({
       return;
     }
 
-    // 댓글 작성 API: POST /api/v1/posts/{글번호}/comments
-    // 어느 글의 댓글인지는 URL 에 들어 있으므로, 본문에는 content 만 보낸다.
-    apiFetch(`/api/v1/posts/${id}/comments`, {
-      method: "POST",
-      body: JSON.stringify({
-        content: contentTextarea.value,
-      }),
-    }).then((data) => {
+    // API 호출과 목록 갱신은 훅(writeComment)이 한다. 여기서는 성공 후 화면 처리만 넘긴다.
+    writeComment(id, contentTextarea.value, (data) => {
       alert(data.msg); // "4번 댓글이 작성되었습니다."
-
       // 다음 댓글을 바로 쓸 수 있게 입력칸을 비운다.
       contentTextarea.value = "";
-
-      // 새 댓글을 화면 목록에도 반영한다. (034-1 에서는 이 부분이 없어서 새로고침해야 보였다)
-      if (postComments == null) return;
-
-      // data.data : 서버가 방금 만든 댓글(PostCommentDto). id, 작성일 등이 서버에서 정해져 돌아온다.
-      // [...postComments, data.data] : 기존 배열을 펼치고(스프레드) 맨 뒤에 새 댓글을 붙인 "새 배열"
-      // push 로 기존 배열을 직접 고치면 리액트가 변경을 알아채지 못하므로 항상 새 배열을 만들어 set 한다.
-      setPostComments([...postComments, data.data]);
     });
   };
 
@@ -243,12 +304,15 @@ function PostCommentWriteAndList({
             <li key={comment.id} className="py-2">
               {comment.content}
               {/* ml-2 : 왼쪽 바깥 여백(댓글 내용과 간격)
-                  글 삭제와 같은 패턴: confirm 이 true 일 때만 && 뒤의 deleteComment 실행 */}
+                  글 삭제와 같은 패턴: confirm 이 true 일 때만 && 뒤의 deleteComment 실행
+                  세 번째 인자 = 삭제 성공 후 실행할 함수. "1번 댓글이 삭제되었습니다." alert */}
               <button
                 className="ml-2 p-2 rounded border"
                 onClick={() =>
                   confirm(`${comment.id}번 댓글을 정말로 삭제하시겠습니까?`) &&
-                  deleteComment(id, comment.id)
+                  deleteComment(id, comment.id, (data) => {
+                    alert(data.msg);
+                  })
                 }
               >
                 삭제
@@ -276,21 +340,9 @@ export default function Page() {
   // 038-2 : 글 삭제 함수(deletePost)도 usePost 가 돌려준다.
   const { post, deletePost } = usePost(id);
 
-  // 댓글 목록 상태. 초기값이 null 이다. (왜 [] 가 아니라 null 인지는 31강에서)
-  //   null : 아직 불러오는 중
-  //   []   : 다 불러왔는데 댓글이 0개
-  const [postComments, setPostComments] = useState<PostCommentDto[] | null>(null);
-
-  useEffect(() => {
-    // 댓글 다건조회 API: GET /api/v1/posts/{id}/comments
-    // 글 조회와 댓글 조회는 서로 기다릴 필요가 없으므로 동시에 요청한다. (먼저 도착한 쪽부터 화면에 반영)
-    apiFetch(`/api/v1/posts/${id}/comments`)
-      .then(setPostComments)
-      .catch((error) => {
-        alert(`${error.resultCode} : ${error.msg}`);
-      });
-    // 의존성 배열에 id 를 넣었다. → id 가 바뀌면(다른 글로 이동하면) 이 effect 가 다시 실행되어 새 글을 불러온다.
-  }, [id]);
+  // 댓글 상태와 조회/삭제/작성 로직은 usePostComments 커스텀 훅으로 옮겼다. (039)
+  // 이제 Page 에는 useState, useEffect 가 직접 보이지 않는다. 데이터는 훅이, 화면은 컴포넌트가 맡는다.
+  const { postComments, deleteComment, writeComment } = usePostComments(id);
 
   // 가드 클로즈(guard clause) 패턴:
   // "아직 준비가 안 된 경우"를 함수 앞부분에서 먼저 처리하고 바로 return 해 버린다.
@@ -310,11 +362,12 @@ export default function Page() {
       <hr className="my-2" />
 
       {/* 댓글 작성 폼과 댓글 목록은 PostCommentWriteAndList 컴포넌트로 분리했다. (037-1)
-          자식 컴포넌트에 필요한 값은 props 로 넘긴다. 상태(postComments)는 여전히 Page 가 갖고 있다. */}
+          자식 컴포넌트에 필요한 값은 props 로 넘긴다. 039 부터는 usePostComments 훅이 준 값과 함수를 넘긴다. */}
       <PostCommentWriteAndList
         id={id}
         postComments={postComments}
-        setPostComments={setPostComments}
+        deleteComment={deleteComment}
+        writeComment={writeComment}
       />
     </>
   );
