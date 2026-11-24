@@ -1,6 +1,6 @@
 # nextjs-board-front
 
-슬로그 강의 **[스프링부트, Next.js REST API 연동](https://www.slog.gg/p/14175)** 1~37강을 따라 만든 Next.js + TypeScript 게시판 프론트엔드입니다.
+슬로그 강의 **[스프링부트, Next.js REST API 연동](https://www.slog.gg/p/14175)** 1~38강을 따라 만든 Next.js + TypeScript 게시판 프론트엔드입니다.
 
 - 백엔드: [jhs512/p-14172-2 (tag 068)](https://github.com/jhs512/p-14172-2/tree/068)
 - 강의 정답 리포: [jhs512/p-14175-3](https://github.com/jhs512/p-14175-3)
@@ -76,6 +76,7 @@ pnpm dev                     # http://localhost:3000
 - [036-3 응답 객체를 그대로 던져 resultCode와 msg 사용](#036-3-응답-객체를-그대로-던져-resultcode와-msg-사용)
 - [037-1 PostCommentWriteAndList 컴포넌트 도입](#037-1-postcommentwriteandlist-컴포넌트-도입)
 - [037-2 PostInfo 컴포넌트 도입](#037-2-postinfo-컴포넌트-도입)
+- [038-1 usePost 커스텀 훅 도입](#038-1-usepost-커스텀-훅-도입)
 
 ---
 
@@ -1911,5 +1912,52 @@ export default function Page() {
       <PostCommentWriteAndList id={id} postComments={postComments} setPostComments={setPostComments} />
     </>
   );
+}
+```
+
+---
+
+## 038-1 usePost 커스텀 훅 도입
+
+- 변경 내용: [commit/038-1](https://github.com/zoek1211/nextjs-board-front/commit/038-1) · 전체 코드: [tree/038-1](https://github.com/zoek1211/nextjs-board-front/tree/038-1)
+- 강의: 38강, post 관련 순수 데이터 로직을 usePost 훅으로 분리 (1단계: usePost 훅 도입)
+
+### 핵심 내용
+
+- 37강에서는 **화면 조각**을 컴포넌트로 나눴다. 38강에서는 **데이터 로직**을 커스텀 훅으로 나눈다.
+- **커스텀 훅** = 이름이 `use` 로 시작하고, 안에서 다른 훅(`useState`, `useEffect`)을 쓰는 평범한 함수다.
+  - JSX 가 없다. "데이터를 어떻게 다루는지"만 담당한다.
+  - 훅 안의 `useState` 는 **이 훅을 호출한 컴포넌트(`Page`)의 상태**가 된다. 그래서 값이 바뀌면 `Page` 가 다시 그려진다.
+  - 훅은 컴포넌트나 다른 훅의 최상위에서만 호출한다. `if`, 반복문 안에서는 호출하지 않는다.
+- `usePost(id)` 로 옮긴 것: `post` 상태 + 글 단건조회 `useEffect`. 결과는 `{ post }` 객체로 돌려준다.
+- `Page` 는 `const { post } = usePost(id);` 한 줄로 글을 얻는다. 글을 어떻게 불러오는지 몰라도 된다.
+- 댓글 조회는 아직 `Page` 의 `useEffect` 에 남아 있다(39강에서 옮긴다).
+- 브라우저에서 확인한 결과: 글 조회, 댓글 작성/삭제, 글 삭제 후 목록 이동 모두 이전과 같다.
+
+### 코드 발췌
+
+`src/app/posts/[id]/page.tsx`
+
+```tsx
+function usePost(id: number) {
+  const [post, setPost] = useState<PostWithContentDto | null>(null);
+
+  useEffect(() => {
+    apiFetch(`/api/v1/posts/${id}`)
+      .then(setPost)
+      .catch((error) => {
+        alert(`${error.resultCode} : ${error.msg}`);
+      });
+  }, [id]);
+
+  return {
+    post,
+  };
+}
+
+export default function Page() {
+  // ...
+  const { post } = usePost(id);
+  // ...
 }
 ```

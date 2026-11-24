@@ -10,6 +10,38 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+// usePost : 글 1개에 관한 "순수 데이터 로직"(상태 + 불러오기)을 모아 둔 커스텀 훅 (038-1)
+// 커스텀 훅 = 이름이 use 로 시작하고, 안에서 다른 훅(useState, useEffect)을 쓰는 평범한 함수.
+//   - 화면(JSX)은 없고 데이터만 다룬다. 컴포넌트는 "무엇을 그릴지", 훅은 "데이터를 어떻게 다룰지"를 맡는다.
+//   - 훅 안의 useState 는 이 훅을 호출한 컴포넌트(Page)의 상태가 된다. 그래서 값이 바뀌면 Page 가 다시 그려진다.
+//   - 훅 규칙: 컴포넌트나 다른 훅의 최상위에서만 호출한다. (if, 반복문, 일반 함수 안에서 호출 금지)
+function usePost(id: number) {
+  // 글 하나는 객체 하나. 아직 받아오기 전에는 "없음"을 뜻하는 null 로 시작한다.
+  // 상세페이지는 본문까지 필요하므로 PostWithContentDto 를 쓴다. 타입 = PostWithContentDto | null
+  const [post, setPost] = useState<PostWithContentDto | null>(null);
+  useEffect(() => {
+    // 글 단건조회 API: GET /api/v1/posts/{id}
+    // 백틱(`) 템플릿 리터럴로 URL 에 id 를 끼워 넣는다.
+    apiFetch(`/api/v1/posts/${id}`)
+      .then(setPost)
+      // 프로미스 체인 중간(then)에서 예외가 나면 남은 then 은 건너뛰고 catch 로 바로 온다.
+      // 주의: fetch 는 "응답을 받기만 하면" 성공으로 본다. 404, 500 같은 HTTP 에러 응답도 성공이다.
+      //       그래서 apiFetch 가 체인 앞부분에서 res.ok 를 보고 직접 예외를 던진다. (036-2)
+      //       없는 글(/posts/999999)을 열면 setPost 는 건너뛰고 여기로 온다.
+      // error : apiFetch 가 던진 응답 객체 { resultCode, msg, data } (036-3)
+      //         → "404-1 : 해당 데이터가 존재하지 않습니다." 처럼 결과 코드와 메시지를 함께 보여 준다.
+      .catch((error) => {
+        alert(`${error.resultCode} : ${error.msg}`);
+      });
+    // id 가 바뀌면(다른 글로 이동하면) 다시 불러온다.
+  }, [id]);
+
+  // 객체로 돌려주면 쓰는 쪽에서 필요한 것만 이름으로 꺼낼 수 있고, 나중에 값을 추가하기도 쉽다. (038-2 에서 deletePost 추가)
+  return {
+    post,
+  };
+}
+
 // 글 정보(번호, 제목, 본문) + 삭제/수정 버튼을 담당하는 컴포넌트 (037-2)
 // 글 삭제는 이 영역에서만 쓰이므로 deletePost 함수도 함께 옮겼다.
 // post 의 타입이 PostWithContentDto | null 이 아니라 PostWithContentDto 다.
@@ -222,29 +254,16 @@ export default function Page() {
   // 글 번호는 숫자로 다루는 것이 자연스러우므로 Number() 로 변환한다. "3" → 3
   const id = Number(idStr);
 
-  // 글 하나는 객체 하나. 아직 받아오기 전에는 "없음"을 뜻하는 null 로 시작한다.
-  // 상세페이지는 본문까지 필요하므로 PostWithContentDto 를 쓴다. 타입 = PostWithContentDto | null
-  const [post, setPost] = useState<PostWithContentDto | null>(null);
+  // 글 상태와 글 조회 로직은 usePost 커스텀 훅으로 옮겼다. (038-1)
+  // 훅이 돌려준 객체에서 post 만 꺼내 쓴다. Page 입장에서는 "글을 어떻게 불러오는지" 몰라도 된다.
+  const { post } = usePost(id);
+
   // 댓글 목록 상태. 초기값이 null 이다. (왜 [] 가 아니라 null 인지는 31강에서)
   //   null : 아직 불러오는 중
   //   []   : 다 불러왔는데 댓글이 0개
   const [postComments, setPostComments] = useState<PostCommentDto[] | null>(null);
 
   useEffect(() => {
-    // 글 단건조회 API: GET /api/v1/posts/{id}
-    // 백틱(`) 템플릿 리터럴로 URL 에 id 를 끼워 넣는다.
-    apiFetch(`/api/v1/posts/${id}`)
-      .then(setPost)
-      // 프로미스 체인 중간(then)에서 예외가 나면 남은 then 은 건너뛰고 catch 로 바로 온다.
-      // 주의: fetch 는 "응답을 받기만 하면" 성공으로 본다. 404, 500 같은 HTTP 에러 응답도 성공이다.
-      //       그래서 apiFetch 가 체인 앞부분에서 res.ok 를 보고 직접 예외를 던진다. (036-2)
-      //       없는 글(/posts/999999)을 열면 setPost 는 건너뛰고 여기로 온다.
-      // error : apiFetch 가 던진 응답 객체 { resultCode, msg, data } (036-3)
-      //         → "404-1 : 해당 데이터가 존재하지 않습니다." 처럼 결과 코드와 메시지를 함께 보여 준다.
-      .catch((error) => {
-        alert(`${error.resultCode} : ${error.msg}`);
-      });
-
     // 댓글 다건조회 API: GET /api/v1/posts/{id}/comments
     // 글 조회와 댓글 조회는 서로 기다릴 필요가 없으므로 동시에 요청한다. (먼저 도착한 쪽부터 화면에 반영)
     apiFetch(`/api/v1/posts/${id}/comments`)
