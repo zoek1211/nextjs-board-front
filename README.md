@@ -1,6 +1,6 @@
 # nextjs-board-front
 
-슬로그 강의 **[스프링부트, Next.js REST API 연동](https://www.slog.gg/p/14175)** 1~41강을 따라 만든 Next.js + TypeScript 게시판 프론트엔드입니다.
+슬로그 강의 **[스프링부트, Next.js REST API 연동](https://www.slog.gg/p/14175)** 1~42강을 따라 만든 Next.js + TypeScript 게시판 프론트엔드입니다.
 
 - 백엔드: [jhs512/p-14172-2 (tag 068)](https://github.com/jhs512/p-14172-2/tree/068)
 - 강의 정답 리포: [jhs512/p-14175-3](https://github.com/jhs512/p-14175-3)
@@ -81,6 +81,7 @@ pnpm dev                     # http://localhost:3000
 - [039 usePostComments 커스텀 훅 도입](#039-usepostcomments-커스텀-훅-도입)
 - [040 path 파라미터는 항상 문자열, 구조분해할당에서 변수 이름 바꾸기](#040-path-파라미터는-항상-문자열-구조분해할당에서-변수-이름-바꾸기)
 - [041 커스텀 훅 결과를 구조분해하지 않고 통째로 하위 컴포넌트에 전달](#041-커스텀-훅-결과를-구조분해하지-않고-통째로-하위-컴포넌트에-전달)
+- [042 ReturnType으로 하위 컴포넌트 props 타입 하드코딩 없애기](#042-returntype으로-하위-컴포넌트-props-타입-하드코딩-없애기)
 
 ---
 
@@ -2172,5 +2173,50 @@ export default function Page() {
       <PostCommentWriteAndList id={id} postCommentsState={postCommentsState} />
     </>
   );
+}
+```
+
+---
+
+## 042 ReturnType으로 하위 컴포넌트 props 타입 하드코딩 없애기
+
+- 변경 내용: [commit/042](https://github.com/zoek1211/nextjs-board-front/commit/042) · 전체 코드: [tree/042](https://github.com/zoek1211/nextjs-board-front/tree/042)
+- 강의: 42강, ReturnType 유틸리티 타입을 이용해서 하위 컴포넌트에서 매개변수 타입 하드코딩을 없앤다
+
+### 핵심 내용
+
+- 41강에서 훅 결과를 통째로 넘기면서, 받는 쪽 props 타입을 손으로 길게 적어야 했다.
+  - 같은 타입을 받는 컴포넌트가 늘어나면(44강) 같은 긴 타입을 또 적어야 한다.
+  - 훅의 반환값을 바꾸면 이 타입들도 모두 찾아서 고쳐야 한다.
+- **`ReturnType<typeof usePostComments>`**
+  - `typeof usePostComments`: 함수의 타입
+  - `ReturnType<함수타입>`: 그 함수가 반환하는 값의 타입을 뽑아 주는 TypeScript 유틸리티 타입
+  - → 훅의 반환 타입이 그대로 props 타입이 된다. 훅이 바뀌면 자동으로 따라 바뀐다.
+- `PostInfo` 도 `{ postState }: { postState: ReturnType<typeof usePost> }` 한 줄이 됐다.
+- 타입만 바뀌었으므로 실행 결과는 같다. `pnpm typecheck` 통과, 브라우저에서 댓글 작성/삭제 정상.
+
+### ReturnType 사용 유무 비교 (강의 자료)
+
+1. **최악**: type 정의도 ReturnType 도 없이 컴포넌트마다 같은 긴 타입을 하드코딩
+2. **type 정의**: `type PostCommentsState = { postComments: ...; deleteComment: ...; writeComment: ... }` 를 한 번 정의하고 재사용. 중복은 없어지지만 훅이 바뀌면 이 type 도 고쳐야 한다.
+3. **ReturnType**: `postCommentsState: ReturnType<typeof usePostComments>`. 훅이 곧 타입의 원본이라 따로 관리할 것이 없다.
+
+### 코드 발췌
+
+`src/app/posts/[id]/page.tsx`
+
+```tsx
+function PostInfo({ postState }: { postState: ReturnType<typeof usePost> }) {
+  // ...
+}
+
+function PostCommentWriteAndList({
+  id,
+  postCommentsState,
+}: {
+  id: number;
+  postCommentsState: ReturnType<typeof usePostComments>;
+}) {
+  // ...
 }
 ```

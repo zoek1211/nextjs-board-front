@@ -148,15 +148,12 @@ function usePostComments(id: number) {
 //   통째로 넘기면 훅이 돌려주는 값이 늘어나도 Page 와 props 목록을 고칠 필요가 없다.
 //   필요한 값은 받는 쪽(이 컴포넌트)에서 구조분해해서 꺼낸다.
 // 통째로 받으므로 post 의 타입이 다시 PostWithContentDto | null 이다. → 이 컴포넌트 안에서 가드 클로즈로 null 을 처리한다.
-//   props 로 함수를 받을 때도 타입을 적는다. deletePost: (id: number, onSuccess: () => void) => void
-function PostInfo({
-  postState,
-}: {
-  postState: {
-    post: PostWithContentDto | null;
-    deletePost: (id: number, onSuccess: () => void) => void;
-  };
-}) {
+// postState 의 타입 : ReturnType<typeof usePost> (042)
+//   typeof usePost        : usePost 함수의 타입
+//   ReturnType<함수타입>  : 그 함수가 반환하는 값의 타입을 뽑아 주는 TypeScript 유틸리티 타입
+//   → { post: PostWithContentDto | null; deletePost: (id: number, onSuccess: () => void) => void } 를 손으로 적지 않아도 된다.
+//   훅의 반환값이 바뀌면 이 타입도 자동으로 따라 바뀐다. (하드코딩한 타입은 훅을 고칠 때마다 같이 고쳐야 했다)
+function PostInfo({ postState }: { postState: ReturnType<typeof usePost> }) {
   // 훅(useRouter)은 그것을 쓰는 컴포넌트 안에서 호출한다. 삭제 후 이동이 여기서 일어나므로 이 컴포넌트에 둔다.
   const router = useRouter();
   const { post, deletePost } = postState;
@@ -217,25 +214,14 @@ function PostInfo({
 // 타입은 { id: number; ... } 처럼 객체 모양으로 적는다.
 //   039 부터는 setPostComments 대신 usePostComments 훅의 함수(deleteComment, writeComment)를 받는다.
 //   041 부터는 훅의 결과 객체를 postCommentsState 하나로 통째로 받고, 여기서 구조분해한다. (PostInfo 와 같은 방식)
-//   함수 props 의 타입도 매개변수와 반환 타입까지 적어 준다. (타입이 길어지는 문제는 42강에서 ReturnType 으로 해결)
+//   042 : 길게 하드코딩하던 postCommentsState 타입을 ReturnType<typeof usePostComments> 로 바꿨다. (PostInfo 설명 참고)
+//         같은 타입을 여러 컴포넌트가 받아도(44강) 한 줄이면 되고, 훅이 바뀌면 자동으로 맞춰진다.
 function PostCommentWriteAndList({
   id,
   postCommentsState,
 }: {
   id: number;
-  postCommentsState: {
-    postComments: PostCommentDto[] | null;
-    deleteComment: (
-      id: number,
-      commentId: number,
-      onSuccess: (data: { msg: string }) => void
-    ) => void;
-    writeComment: (
-      id: number,
-      content: string,
-      onSuccess: (data: { msg: string }) => void
-    ) => void;
-  };
+  postCommentsState: ReturnType<typeof usePostComments>;
 }) {
   const { postComments, deleteComment, writeComment } = postCommentsState;
 
