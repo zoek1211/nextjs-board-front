@@ -1,6 +1,6 @@
 # nextjs-board-front
 
-슬로그 강의 **[스프링부트, Next.js REST API 연동](https://www.slog.gg/p/14175)** 1~40강을 따라 만든 Next.js + TypeScript 게시판 프론트엔드입니다.
+슬로그 강의 **[스프링부트, Next.js REST API 연동](https://www.slog.gg/p/14175)** 1~41강을 따라 만든 Next.js + TypeScript 게시판 프론트엔드입니다.
 
 - 백엔드: [jhs512/p-14172-2 (tag 068)](https://github.com/jhs512/p-14172-2/tree/068)
 - 강의 정답 리포: [jhs512/p-14175-3](https://github.com/jhs512/p-14175-3)
@@ -80,6 +80,7 @@ pnpm dev                     # http://localhost:3000
 - [038-2 글 삭제 로직을 usePost 훅으로 이동](#038-2-글-삭제-로직을-usepost-훅으로-이동)
 - [039 usePostComments 커스텀 훅 도입](#039-usepostcomments-커스텀-훅-도입)
 - [040 path 파라미터는 항상 문자열, 구조분해할당에서 변수 이름 바꾸기](#040-path-파라미터는-항상-문자열-구조분해할당에서-변수-이름-바꾸기)
+- [041 커스텀 훅 결과를 구조분해하지 않고 통째로 하위 컴포넌트에 전달](#041-커스텀-훅-결과를-구조분해하지-않고-통째로-하위-컴포넌트에-전달)
 
 ---
 
@@ -2114,4 +2115,62 @@ const { postComments, deleteComment, writeComment } = usePostComments(id);
 const { id: idStr } = useParams<{ id: string }>();
 // 숫자가 필요하므로 직접 변환
 const id = Number(idStr);
+```
+
+---
+
+## 041 커스텀 훅 결과를 구조분해하지 않고 통째로 하위 컴포넌트에 전달
+
+- 변경 내용: [commit/041](https://github.com/zoek1211/nextjs-board-front/commit/041) · 전체 코드: [tree/041](https://github.com/zoek1211/nextjs-board-front/tree/041)
+- 강의: 41강, 상위 컴포넌트에서 커스텀 훅의 결과를 구조분해할당하지 않고 결과 자체를 하위 컴포넌트로 넘긴다
+
+### 핵심 내용
+
+- 이전: `Page` 가 `const { post, deletePost } = usePost(id);` 로 꺼낸 뒤 하나씩 props 로 넘겼다.
+- 이후: `const postState = usePost(id);` 로 **결과 객체를 통째로** 받아 `<PostInfo postState={postState} />` 로 넘긴다. 댓글도 `postCommentsState` 로 같은 방식이다.
+  - `Page` 는 `post` 를 직접 쓰지 않는다. 꺼내 쓰는 일은 실제로 쓰는 하위 컴포넌트가 한다.
+  - 훅이 돌려주는 값이 늘어나도 `Page` 와 props 목록을 고칠 필요가 없다.
+  - props 가 짧아져서 `<PostCommentWriteAndList id={id} postCommentsState={postCommentsState} />` 처럼 한 줄에 들어간다.
+- 하위 컴포넌트에서 구조분해한다: `const { post, deletePost } = postState;`
+- **가드 클로즈 위치가 바뀌었다.**
+  - `Page` 가 더 이상 `post` 를 보지 않으므로 `if (post == null) return ...` 을 `PostInfo` 로 옮겼다. 댓글 영역도 `if (postComments == null) return ...` 을 갖는다.
+  - 그래서 글을 불러오는 중에도 제목(`글 상세페이지`)은 바로 보이고, 각 영역이 따로 "로딩중..." 을 표시한다.
+  - 훅(`useRouter`)은 가드 클로즈 `return` 보다 위에서 호출해야 한다. 훅은 렌더링마다 같은 순서로 호출되어야 한다.
+- 통째로 넘기는 객체의 타입을 손으로 적다 보니 props 타입이 더 길어졌다. → 42강에서 `ReturnType` 으로 해결한다.
+- 브라우저에서 확인한 결과: 댓글 작성/삭제, 글 삭제 후 `/posts` 이동 모두 이전과 같다.
+
+### 코드 발췌
+
+`src/app/posts/[id]/page.tsx`
+
+```tsx
+function PostInfo({
+  postState,
+}: {
+  postState: {
+    post: PostWithContentDto | null;
+    deletePost: (id: number, onSuccess: () => void) => void;
+  };
+}) {
+  const router = useRouter();
+  const { post, deletePost } = postState;
+
+  if (post == null) return <div>로딩중...</div>;
+  // ...
+}
+
+export default function Page() {
+  // ...
+  const postState = usePost(id);
+  const postCommentsState = usePostComments(id);
+
+  return (
+    <>
+      <h1>글 상세페이지</h1>
+      <PostInfo postState={postState} />
+      <hr className="my-2" />
+      <PostCommentWriteAndList id={id} postCommentsState={postCommentsState} />
+    </>
+  );
+}
 ```

@@ -143,19 +143,30 @@ function usePostComments(id: number) {
 }
 
 // 글 정보(번호, 제목, 본문) + 삭제/수정 버튼을 담당하는 컴포넌트 (037-2)
-// post 의 타입이 PostWithContentDto | null 이 아니라 PostWithContentDto 다.
-//   → 부모(Page)가 가드 클로즈로 null 을 걸러 낸 뒤에만 이 컴포넌트를 그리기 때문에, 여기서는 null 체크가 필요 없다.
-// deletePost : 글 삭제 함수. 038-2 부터 usePost 훅에 있고, 부모(Page)가 props 로 넘겨준다.
-//   props 로 함수를 받을 때도 타입을 적는다. (id: number, onSuccess: () => void) => void
+// postState : usePost 훅이 돌려준 결과 객체 { post, deletePost } 를 통째로 받는다. (041)
+//   041 이전에는 Page 가 결과를 구조분해해서 post, deletePost 를 하나씩 넘겼다.
+//   통째로 넘기면 훅이 돌려주는 값이 늘어나도 Page 와 props 목록을 고칠 필요가 없다.
+//   필요한 값은 받는 쪽(이 컴포넌트)에서 구조분해해서 꺼낸다.
+// 통째로 받으므로 post 의 타입이 다시 PostWithContentDto | null 이다. → 이 컴포넌트 안에서 가드 클로즈로 null 을 처리한다.
+//   props 로 함수를 받을 때도 타입을 적는다. deletePost: (id: number, onSuccess: () => void) => void
 function PostInfo({
-  post,
-  deletePost,
+  postState,
 }: {
-  post: PostWithContentDto;
-  deletePost: (id: number, onSuccess: () => void) => void;
+  postState: {
+    post: PostWithContentDto | null;
+    deletePost: (id: number, onSuccess: () => void) => void;
+  };
 }) {
   // 훅(useRouter)은 그것을 쓰는 컴포넌트 안에서 호출한다. 삭제 후 이동이 여기서 일어나므로 이 컴포넌트에 둔다.
   const router = useRouter();
+  const { post, deletePost } = postState;
+
+  // 가드 클로즈(guard clause) 패턴: (041 에서 Page 에서 이 컴포넌트로 옮겨 옴)
+  // "아직 준비가 안 된 경우"를 함수 앞부분에서 먼저 처리하고 바로 return 해 버린다.
+  // 이 줄 아래에서는 post 가 절대 null 이 아니므로 TypeScript 도 post 를 글 객체로 확신한다(타입 좁히기).
+  // → JSX 안에서 post == null && ..., post != null && (...) 로 두 번 나눠 쓸 필요가 없어진다.
+  // 주의: 훅(useRouter)은 이 return 보다 위에서 호출해야 한다. 훅은 매번 같은 순서로 호출되어야 하기 때문이다.
+  if (post == null) return <div>로딩중...</div>;
 
   return (
     <>
@@ -205,26 +216,34 @@ function PostInfo({
 // props : 부모(Page)가 넘겨준 값들. 함수 매개변수에서 바로 구조분해해서 받는다.
 // 타입은 { id: number; ... } 처럼 객체 모양으로 적는다.
 //   039 부터는 setPostComments 대신 usePostComments 훅의 함수(deleteComment, writeComment)를 받는다.
+//   041 부터는 훅의 결과 객체를 postCommentsState 하나로 통째로 받고, 여기서 구조분해한다. (PostInfo 와 같은 방식)
 //   함수 props 의 타입도 매개변수와 반환 타입까지 적어 준다. (타입이 길어지는 문제는 42강에서 ReturnType 으로 해결)
 function PostCommentWriteAndList({
   id,
-  postComments,
-  deleteComment,
-  writeComment,
+  postCommentsState,
 }: {
   id: number;
-  postComments: PostCommentDto[] | null;
-  deleteComment: (
-    id: number,
-    commentId: number,
-    onSuccess: (data: { msg: string }) => void
-  ) => void;
-  writeComment: (
-    id: number,
-    content: string,
-    onSuccess: (data: { msg: string }) => void
-  ) => void;
+  postCommentsState: {
+    postComments: PostCommentDto[] | null;
+    deleteComment: (
+      id: number,
+      commentId: number,
+      onSuccess: (data: { msg: string }) => void
+    ) => void;
+    writeComment: (
+      id: number,
+      content: string,
+      onSuccess: (data: { msg: string }) => void
+    ) => void;
+  };
 }) {
+  const { postComments, deleteComment, writeComment } = postCommentsState;
+
+  // 댓글 목록을 아직 불러오는 중이면 댓글 영역 전체 대신 로딩 표시만 그린다. (041)
+  // 이 아래에서는 postComments 가 null 이 아니다.
+  // (그래서 JSX 의 "postComments == null → 댓글 로딩중..." 갈래는 사실상 실행되지 않는다. 정답 코드 그대로 둔다)
+  if (postComments == null) return <div>로딩중...</div>;
+
   // 댓글 작성 폼 제출 처리. 글쓰기 폼(22~25강)과 같은 패턴이다.
   const handleCommentWriteFormSubmit = (
     e: React.SyntheticEvent<HTMLFormElement>
@@ -338,39 +357,31 @@ export default function Page() {
   const id = Number(idStr);
 
   // 글 상태와 글 조회 로직은 usePost 커스텀 훅으로 옮겼다. (038-1)
-  // 훅이 돌려준 객체에서 post 만 꺼내 쓴다. Page 입장에서는 "글을 어떻게 불러오는지" 몰라도 된다.
-  // 038-2 : 글 삭제 함수(deletePost)도 usePost 가 돌려준다.
-  const { post, deletePost } = usePost(id);
+  // Page 입장에서는 "글을 어떻게 불러오는지" 몰라도 된다. 038-2 부터 글 삭제 함수(deletePost)도 usePost 가 돌려준다.
+  // 041 : 결과를 구조분해하지 않고 통째로(postState) 받아서, 그대로 하위 컴포넌트에 넘긴다.
+  //       Page 는 post 를 직접 쓰지 않으므로 꺼낼 필요가 없다. 꺼내 쓰는 일은 하위 컴포넌트가 한다.
+  const postState = usePost(id);
 
   // 댓글 상태와 조회/삭제/작성 로직은 usePostComments 커스텀 훅으로 옮겼다. (039)
   // 이제 Page 에는 useState, useEffect 가 직접 보이지 않는다. 데이터는 훅이, 화면은 컴포넌트가 맡는다.
-  const { postComments, deleteComment, writeComment } = usePostComments(id);
+  const postCommentsState = usePostComments(id);
 
-  // 가드 클로즈(guard clause) 패턴:
-  // "아직 준비가 안 된 경우"를 함수 앞부분에서 먼저 처리하고 바로 return 해 버린다.
-  // 이 줄 아래에서는 post 가 절대 null 이 아니므로 TypeScript 도 post 를 글 객체로 확신한다(타입 좁히기).
-  // → JSX 안에서 post == null && ..., post != null && (...) 로 두 번 나눠 쓸 필요가 없어진다.
-  if (post == null) return <div>로딩중...</div>;
-
+  // 041 : post == null 가드 클로즈는 PostInfo 로 옮겼다.
+  //       그래서 글을 불러오는 중에도 제목(h1)은 바로 보이고, 글 영역과 댓글 영역이 각자 로딩 표시를 한다.
   return (
     <>
       <h1>글 상세페이지</h1>
 
       {/* 글 내용 + 삭제/수정 버튼은 PostInfo 컴포넌트로 분리했다. (037-2)
-          가드 클로즈 덕분에 여기서 post 는 null 이 아니므로, PostWithContentDto 타입 그대로 넘길 수 있다. */}
-      <PostInfo post={post} deletePost={deletePost} />
+          041 : usePost 결과 객체를 통째로 넘긴다. */}
+      <PostInfo postState={postState} />
 
       {/* hr : 구분선, my-2 : 위아래 바깥 여백 */}
       <hr className="my-2" />
 
       {/* 댓글 작성 폼과 댓글 목록은 PostCommentWriteAndList 컴포넌트로 분리했다. (037-1)
-          자식 컴포넌트에 필요한 값은 props 로 넘긴다. 039 부터는 usePostComments 훅이 준 값과 함수를 넘긴다. */}
-      <PostCommentWriteAndList
-        id={id}
-        postComments={postComments}
-        deleteComment={deleteComment}
-        writeComment={writeComment}
-      />
+          041 : usePostComments 결과 객체를 통째로 넘긴다. props 가 짧아져서 한 줄에 들어간다. */}
+      <PostCommentWriteAndList id={id} postCommentsState={postCommentsState} />
     </>
   );
 }
