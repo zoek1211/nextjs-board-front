@@ -1,6 +1,6 @@
 # nextjs-board-front
 
-슬로그 강의 **[스프링부트, Next.js REST API 연동](https://www.slog.gg/p/14175)** 1~47강을 따라 만든 Next.js + TypeScript 게시판 프론트엔드입니다.
+슬로그 강의 **[스프링부트, Next.js REST API 연동](https://www.slog.gg/p/14175)** 1~48강을 따라 만든 Next.js + TypeScript 게시판 프론트엔드입니다.
 
 - 백엔드: [jhs512/p-14172-2 (tag 068)](https://github.com/jhs512/p-14172-2/tree/068)
 - 강의 정답 리포: [jhs512/p-14175-3](https://github.com/jhs512/p-14175-3)
@@ -89,6 +89,7 @@ pnpm dev                     # http://localhost:3000
 - [046-1 클로저로 usePostComments의 id 기억, 하위 컴포넌트에 id 안 넘기기](#046-1-클로저로-usepostcomments의-id-기억-하위-컴포넌트에-id-안-넘기기)
 - [046-2 id가 필요하면 usePostComments가 제공](#046-2-id가-필요하면-usepostcomments가-제공)
 - [047 id 대신 postId로 이름을 명확하게](#047-id-대신-postid로-이름을-명확하게)
+- [048 PostCommentListItem 컴포넌트 분리](#048-postcommentlistitem-컴포넌트-분리)
 
 ---
 
@@ -2567,4 +2568,70 @@ function usePostComments(postId: number) {
     writeComment,
   };
 }
+```
+
+---
+
+## 048 PostCommentListItem 컴포넌트 분리
+
+- 변경 내용: [commit/048](https://github.com/zoek1211/nextjs-board-front/commit/048) · 전체 코드: [tree/048](https://github.com/zoek1211/nextjs-board-front/tree/048)
+- 강의: 48강, PostCommentList 에서 li 엘리먼트를 PostCommentListItem 으로 분리
+
+### 핵심 내용
+
+- `PostCommentList` 의 `map` 안에 있던 **댓글 하나(`li`)** 를 `PostCommentListItem` 컴포넌트로 떼어 낸다.
+  - 댓글 삭제(confirm + 삭제 호출 + alert)는 "댓글 하나"에 대한 일이므로 `deleteComment` 도 함께 옮겼다.
+  - props: 그릴 댓글 `comment: PostCommentDto`, 삭제 함수를 꺼낼 `postCommentsState`
+- `PostCommentList` 는 이제 제목, 빈 목록 처리, `ul` + `map` 만 담당한다.
+- **`key` 는 map 을 도는 쪽에서 준다.** `<PostCommentListItem key={comment.id} ... />`
+  - `key` 는 리액트가 목록 항목을 구별하려고 쓰는 특별한 속성이다. 컴포넌트에 props 로 전달되지 않는다.
+  - 그래서 `PostCommentListItem` 안의 `<li>` 에는 `key` 가 없다.
+- 49강부터 댓글마다 "수정 모드" 상태를 가져야 하는데, 댓글 하나가 컴포넌트로 분리되어 있으면 그 상태를 `PostCommentListItem` 안에 두기 쉽다.
+- 브라우저에서 확인한 결과: 댓글 작성/삭제, 글 삭제 후 `/posts` 이동 모두 이전과 같다.
+
+### 지금까지의 컴포넌트 구조
+
+```
+Page
+├─ PostInfo                    (글 정보, 글 삭제)            ← usePost
+└─ PostCommentWriteAndList     (배치만)                      ← usePostComments
+   ├─ PostCommentWrite         (댓글 작성 폼)
+   └─ PostCommentList          (댓글 목록)
+      └─ PostCommentListItem   (댓글 하나, 댓글 삭제)
+```
+
+### 코드 발췌
+
+`src/app/posts/[id]/page.tsx`
+
+```tsx
+function PostCommentListItem({
+  comment,
+  postCommentsState,
+}: {
+  comment: PostCommentDto;
+  postCommentsState: ReturnType<typeof usePostComments>;
+}) {
+  const { deleteComment: _deleteComment } = postCommentsState;
+
+  const deleteComment = (commentId: number) => { ... };
+
+  return (
+    <li className="py-2">
+      {comment.content}
+      <button className="ml-2 p-2 rounded border" onClick={() => deleteComment(comment.id)}>
+        삭제
+      </button>
+    </li>
+  );
+}
+
+// PostCommentList
+{postComments.map((comment) => (
+  <PostCommentListItem
+    key={comment.id}
+    comment={comment}
+    postCommentsState={postCommentsState}
+  />
+))}
 ```

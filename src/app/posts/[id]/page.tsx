@@ -297,21 +297,22 @@ function PostCommentWrite({
   );
 }
 
-// 댓글 목록만 담당하는 컴포넌트 (044-2)
-// 044-1 까지 PostCommentWriteAndList 가 하던 "목록 그리기 + 댓글 삭제"를 그대로 옮겨 왔다.
-function PostCommentList({
+// 댓글 하나(li)를 담당하는 컴포넌트 (048)
+// PostCommentList 의 map 안에 있던 li 엘리먼트를 그대로 떼어 냈다.
+// 댓글 삭제(confirm + 삭제 호출 + alert)는 댓글 하나에 대한 일이므로 이 컴포넌트로 함께 옮겼다.
+// props
+//   comment           : 그릴 댓글 하나 (PostCommentDto)
+//   postCommentsState : 삭제 함수(deleteComment)를 꺼내기 위해 훅 결과를 통째로 받는다. (41강 방식)
+function PostCommentListItem({
+  comment,
   postCommentsState,
 }: {
+  comment: PostCommentDto;
   postCommentsState: ReturnType<typeof usePostComments>;
 }) {
   // deleteComment 는 _deleteComment 로 이름을 바꿔 받고, 아래에서 같은 이름의 함수를 새로 만든다. (043, PostInfo 와 같은 방식)
-  // writeComment 는 PostCommentWrite 가 쓰므로 여기서는 꺼내지 않는다. (044-1)
-  // 046-2 : 제목에 글 번호를 보여 주기 위해 글 번호(047 부터 postId)도 꺼낸다. (props 가 아니라 훅 결과에서)
-  const {
-    postId,
-    postComments,
-    deleteComment: _deleteComment,
-  } = postCommentsState;
+  // 이 컴포넌트에 필요한 것은 삭제 함수뿐이다. (048)
+  const { deleteComment: _deleteComment } = postCommentsState;
 
   // 하위 컴포넌트에서 재정의한 deleteComment (043)
   // JSX 의 onClick 에 있던 confirm + 삭제 호출 + 성공 후 alert 를 JSX 밖으로 옮겼다.
@@ -326,6 +327,36 @@ function PostCommentList({
       alert(data.msg);
     });
   };
+
+  return (
+    // py-2 : 위아래 안쪽 여백
+    // key 는 여기가 아니라 map 을 도는 쪽(PostCommentList)에서 <PostCommentListItem key=... /> 로 준다.
+    <li className="py-2">
+      {comment.content}
+      {/* ml-2 : 왼쪽 바깥 여백(댓글 내용과 간격)
+          댓글마다 번호가 다르므로 여기서는 화살표 함수로 감싸서 comment.id 를 넘긴다.
+          (043 이전에는 confirm, 삭제 호출, alert 가 모두 이 onClick 안에 있었다) */}
+      <button
+        className="ml-2 p-2 rounded border"
+        onClick={() => deleteComment(comment.id)}
+      >
+        삭제
+      </button>
+    </li>
+  );
+}
+
+// 댓글 목록만 담당하는 컴포넌트 (044-2)
+// 044-1 까지 PostCommentWriteAndList 가 하던 "목록 그리기 + 댓글 삭제"를 그대로 옮겨 왔다.
+// 048 : 댓글 하나(li)와 댓글 삭제는 PostCommentListItem 으로 분리했다. 이 컴포넌트는 목록(ul)과 map 만 담당한다.
+function PostCommentList({
+  postCommentsState,
+}: {
+  postCommentsState: ReturnType<typeof usePostComments>;
+}) {
+  // 046-2 : 제목에 글 번호를 보여 주기 위해 글 번호(047 부터 postId)도 꺼낸다. (props 가 아니라 훅 결과에서)
+  // writeComment 는 PostCommentWrite 가, deleteComment 는 PostCommentListItem 이 쓰므로 여기서는 꺼내지 않는다. (044-1, 048)
+  const { postId, postComments } = postCommentsState;
 
   // 댓글 목록을 아직 불러오는 중이면 목록 대신 로딩 표시만 그린다. (041)
   // 044-2 : 작성 폼이 다른 컴포넌트로 나갔으므로, 이제 로딩 중이어도 작성 폼은 보이고 목록 자리만 "로딩중..." 이 된다.
@@ -347,19 +378,13 @@ function PostCommentList({
       {postComments != null && postComments.length > 0 && (
         <ul>
           {postComments.map((comment) => (
-            // py-2 : 위아래 안쪽 여백
-            <li key={comment.id} className="py-2">
-              {comment.content}
-              {/* ml-2 : 왼쪽 바깥 여백(댓글 내용과 간격)
-                  댓글마다 번호가 다르므로 여기서는 화살표 함수로 감싸서 comment.id 를 넘긴다.
-                  (043 이전에는 confirm, 삭제 호출, alert 가 모두 이 onClick 안에 있었다) */}
-              <button
-                className="ml-2 p-2 rounded border"
-                onClick={() => deleteComment(comment.id)}
-              >
-                삭제
-              </button>
-            </li>
+            // map 으로 만든 최상위 엘리먼트에는 고유한 key 가 필요하다.
+            // 컴포넌트로 분리해도 마찬가지다. key 는 리액트가 쓰는 특별한 속성이라 props 로 전달되지 않는다.
+            <PostCommentListItem
+              key={comment.id}
+              comment={comment}
+              postCommentsState={postCommentsState}
+            />
           ))}
         </ul>
       )}
