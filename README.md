@@ -91,6 +91,7 @@ pnpm dev                     # http://localhost:3000
 - [047 id 대신 postId로 이름을 명확하게](#047-id-대신-postid로-이름을-명확하게)
 - [048 PostCommentListItem 컴포넌트 분리](#048-postcommentlistitem-컴포넌트-분리)
 - [049-1 modifyMode 상태로 댓글 내용 보이기 숨기기](#049-1-modifymode-상태로-댓글-내용-보이기-숨기기)
+- [049-2 수정 모드에서 댓글 수정 폼 표시, submit은 일단 막기](#049-2-수정-모드에서-댓글-수정-폼-표시-submit은-일단-막기)
 
 ---
 
@@ -2685,4 +2686,53 @@ function PostCommentListItem({ comment, postCommentsState }: { ... }) {
     </li>
   );
 }
+```
+
+---
+
+## 049-2 수정 모드에서 댓글 수정 폼 표시, submit은 일단 막기
+
+- 변경 내용: [commit/049-2](https://github.com/zoek1211/nextjs-board-front/commit/049-2) · 전체 코드: [tree/049-2](https://github.com/zoek1211/nextjs-board-front/tree/049-2)
+- 강의: 49강 (2단계: 수정 모드일 때 댓글 수정 폼이 보이도록, 일단 submit 이벤트가 발생하면 전송이 막히도록)
+
+### 핵심 내용
+
+- `{modifyMode && <form>...</form>}`: 수정 모드일 때만 **댓글 수정 폼**을 그린다. 049-1 의 `{!modifyMode && 내용}` 과 짝이 되어, 내용과 수정 폼이 서로 자리를 바꾼다(스위칭).
+- `defaultValue={comment.content}`: 입력칸에 기존 댓글 내용을 미리 채운다(28강 글 수정 폼과 같은 방식).
+  - `value` 가 아니라 `defaultValue` 이므로 처음 값만 넣어 주고, 이후 입력은 브라우저가 관리한다.
+- `onSubmit={(e) => e.preventDefault()}`: 아직 수정 API 를 부르지 않는다. 폼 기본 제출(페이지 새로고침)만 막아 둔다. (50강에서 구현)
+- 토글 버튼의 글자도 상태에 따라 바꾼다: `{modifyMode ? "수정취소" : "수정"}`
+- 브라우저에서 확인한 결과(1번 글의 6번 댓글):
+  - 수정 → 내용 대신 `034-1 댓글 테스트` 가 채워진 입력칸 + 수정 버튼이 보이고, 토글 버튼은 "수정취소"
+  - 내용을 바꾸고 폼의 수정 버튼을 눌러도 새로고침/alert/서버 변경이 없다. (아직 구현 전)
+  - 수정취소 → 원래 내용이 다시 보인다.
+
+### 코드 발췌
+
+`src/app/posts/[id]/page.tsx` (PostCommentListItem)
+
+```tsx
+<li className="flex gap-2 items-center">
+  <span>{comment.id} :</span>
+  {!modifyMode && <span>{comment.content}</span>}
+  {modifyMode && (
+    <form className="flex gap-2 items-center" onSubmit={(e) => e.preventDefault()}>
+      <textarea
+        className="border p-2 rounded"
+        name="content"
+        placeholder="댓글 내용"
+        maxLength={100}
+        rows={5}
+        defaultValue={comment.content}
+      />
+      <button className="p-2 rounded border" type="submit">
+        수정
+      </button>
+    </form>
+  )}
+  <button className="p-2 rounded border" onClick={toggleModifyMode}>
+    {modifyMode ? "수정취소" : "수정"}
+  </button>
+  {/* 삭제 버튼 */}
+</li>
 ```

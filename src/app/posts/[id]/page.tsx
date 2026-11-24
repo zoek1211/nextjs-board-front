@@ -347,9 +347,33 @@ function PostCommentListItem({
       <span>{comment.id} :</span>
       {/* 수정 모드가 아닐 때만 댓글 내용을 보여 준다. */}
       {!modifyMode && <span>{comment.content}</span>}
-      {/* onClick={toggleModifyMode} : 인자가 필요 없으므로 함수 자체를 넘긴다. */}
+      {/* 수정 모드일 때만 댓글 수정 폼을 보여 준다. (049-2) → 내용과 수정 폼이 서로 자리를 바꾼다(스위칭).
+          onSubmit={(e) => e.preventDefault()} : 일단 폼 기본 제출(페이지 새로고침)만 막아 둔다.
+            아직 수정 API 를 호출하지 않으므로, 수정 버튼을 눌러도 아무 일도 일어나지 않는다. (50강에서 구현) */}
+      {modifyMode && (
+        <form
+          className="flex gap-2 items-center"
+          onSubmit={(e) => e.preventDefault()}
+        >
+          {/* defaultValue={comment.content} : 입력칸에 기존 댓글 내용을 미리 채워 둔다. (28강 글 수정 폼과 같은 방식)
+              value 가 아니라 defaultValue 이므로, 처음 값만 넣어 주고 이후 입력은 브라우저가 관리한다. */}
+          <textarea
+            className="border p-2 rounded"
+            name="content"
+            placeholder="댓글 내용"
+            maxLength={100}
+            rows={5}
+            defaultValue={comment.content}
+          />
+          <button className="p-2 rounded border" type="submit">
+            수정
+          </button>
+        </form>
+      )}
+      {/* onClick={toggleModifyMode} : 인자가 필요 없으므로 함수 자체를 넘긴다.
+          버튼 글자도 상태에 따라 바꾼다. 수정 모드면 "수정취소" (다시 누르면 보기 모드로) */}
       <button className="p-2 rounded border" onClick={toggleModifyMode}>
-        수정
+        {modifyMode ? "수정취소" : "수정"}
       </button>
       {/* 댓글마다 번호가 다르므로 여기서는 화살표 함수로 감싸서 comment.id 를 넘긴다.
           (043 이전에는 confirm, 삭제 호출, alert 가 모두 이 onClick 안에 있었다) */}
