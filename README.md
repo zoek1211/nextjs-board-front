@@ -77,6 +77,7 @@ pnpm dev                     # http://localhost:3000
 - [037-1 PostCommentWriteAndList 컴포넌트 도입](#037-1-postcommentwriteandlist-컴포넌트-도입)
 - [037-2 PostInfo 컴포넌트 도입](#037-2-postinfo-컴포넌트-도입)
 - [038-1 usePost 커스텀 훅 도입](#038-1-usepost-커스텀-훅-도입)
+- [038-2 글 삭제 로직을 usePost 훅으로 이동](#038-2-글-삭제-로직을-usepost-훅으로-이동)
 
 ---
 
@@ -1960,4 +1961,65 @@ export default function Page() {
   const { post } = usePost(id);
   // ...
 }
+```
+
+---
+
+## 038-2 글 삭제 로직을 usePost 훅으로 이동
+
+- 변경 내용: [commit/038-2](https://github.com/zoek1211/nextjs-board-front/commit/038-2) · 전체 코드: [tree/038-2](https://github.com/zoek1211/nextjs-board-front/tree/038-2)
+- 강의: 38강 (2단계: 글 삭제 로직도 usePost 훅으로 이동)
+
+### 핵심 내용
+
+- 글 삭제 API 호출도 "글 데이터 로직"이므로 `PostInfo` 컴포넌트에서 `usePost` 훅으로 옮긴다. 훅은 `{ post, deletePost }` 를 돌려준다.
+- 하지만 **삭제 후 페이지 이동(`router.replace`)은 화면의 일**이다. 훅은 그것을 모른다.
+  - 그래서 `deletePost(id, onSuccess)` 처럼 **성공 후 할 일을 콜백 함수로 받는다.** 훅 안에서는 `.then(onSuccess)` 만 한다.
+  - 호출하는 쪽(`PostInfo`)이 `deletePost(post.id, () => { router.replace("/posts"); })` 로 할 일을 넘긴다.
+- `Page` → `PostInfo` 로 `deletePost` 를 props 로 전달한다. 함수 props 의 타입은 `(id: number, onSuccess: () => void) => void` 처럼 적는다.
+- `onSuccess` 가 응답(`data`)을 쓰지 않으므로, 이전에 뜨던 "N번 글이 삭제되었습니다." alert 는 정답 코드에서 사라졌다.
+- 브라우저에서 확인한 결과: 새 글을 만들어 상세에서 삭제하면 confirm 후 alert 없이 `/posts` 로 이동하고, API 로 조회하면 404 다. 댓글 작성/삭제는 이전과 같다.
+
+### 코드 발췌
+
+`src/app/posts/[id]/page.tsx`
+
+```tsx
+function usePost(id: number) {
+  // ... post 상태, 조회
+
+  const deletePost = (id: number, onSuccess: () => void) => {
+    apiFetch(`/api/v1/posts/${id}`, {
+      method: "DELETE",
+    }).then(onSuccess);
+  };
+
+  return {
+    post,
+    deletePost,
+  };
+}
+
+function PostInfo({
+  post,
+  deletePost,
+}: {
+  post: PostWithContentDto;
+  deletePost: (id: number, onSuccess: () => void) => void;
+}) {
+  const router = useRouter();
+  // ...
+  <button
+    onClick={() =>
+      confirm(`${post.id}번 글을 정말로 삭제하시겠습니까?`) &&
+      deletePost(post.id, () => {
+        router.replace("/posts");
+      })
+    }
+  >
+}
+
+// Page
+const { post, deletePost } = usePost(id);
+<PostInfo post={post} deletePost={deletePost} />
 ```

@@ -19,6 +19,7 @@ function usePost(id: number) {
   // 글 하나는 객체 하나. 아직 받아오기 전에는 "없음"을 뜻하는 null 로 시작한다.
   // 상세페이지는 본문까지 필요하므로 PostWithContentDto 를 쓴다. 타입 = PostWithContentDto | null
   const [post, setPost] = useState<PostWithContentDto | null>(null);
+
   useEffect(() => {
     // 글 단건조회 API: GET /api/v1/posts/{id}
     // 백틱(`) 템플릿 리터럴로 URL 에 id 를 끼워 넣는다.
@@ -36,33 +37,40 @@ function usePost(id: number) {
     // id 가 바뀌면(다른 글로 이동하면) 다시 불러온다.
   }, [id]);
 
-  // 객체로 돌려주면 쓰는 쪽에서 필요한 것만 이름으로 꺼낼 수 있고, 나중에 값을 추가하기도 쉽다. (038-2 에서 deletePost 추가)
+  // 글 삭제: DELETE /api/v1/posts/{id} (038-2 에서 PostInfo 컴포넌트로부터 옮겨 옴)
+  // 본문(body)이 없는 요청이므로 method 만 넘긴다. (apiFetch 는 body 가 없으면 Content-Type 을 붙이지 않는다)
+  //
+  // 훅은 "데이터 로직"만 담당한다. 삭제에 성공한 뒤 화면에서 무엇을 할지(페이지 이동 등)는 화면(컴포넌트)이 정할 일이다.
+  // 그래서 성공 후 할 일을 onSuccess 콜백 함수로 받는다.
+  //   onSuccess: () => void : 인자 없이 호출되고 반환값이 없는 함수 타입
+  // .then(onSuccess) : 삭제 요청이 성공하면 onSuccess 를 실행한다.
+  const deletePost = (id: number, onSuccess: () => void) => {
+    apiFetch(`/api/v1/posts/${id}`, {
+      method: "DELETE",
+    }).then(onSuccess);
+  };
+
+  // 객체로 돌려주면 쓰는 쪽에서 필요한 것만 이름으로 꺼낼 수 있고, 나중에 값을 추가하기도 쉽다.
   return {
     post,
+    deletePost,
   };
 }
 
 // 글 정보(번호, 제목, 본문) + 삭제/수정 버튼을 담당하는 컴포넌트 (037-2)
-// 글 삭제는 이 영역에서만 쓰이므로 deletePost 함수도 함께 옮겼다.
 // post 의 타입이 PostWithContentDto | null 이 아니라 PostWithContentDto 다.
 //   → 부모(Page)가 가드 클로즈로 null 을 걸러 낸 뒤에만 이 컴포넌트를 그리기 때문에, 여기서는 null 체크가 필요 없다.
-function PostInfo({ post }: { post: PostWithContentDto }) {
-  // 훅(useRouter)은 그것을 쓰는 컴포넌트 안에서 호출한다. 삭제 후 이동이 여기서 일어나므로 Page 에서 옮겨 왔다.
+// deletePost : 글 삭제 함수. 038-2 부터 usePost 훅에 있고, 부모(Page)가 props 로 넘겨준다.
+//   props 로 함수를 받을 때도 타입을 적는다. (id: number, onSuccess: () => void) => void
+function PostInfo({
+  post,
+  deletePost,
+}: {
+  post: PostWithContentDto;
+  deletePost: (id: number, onSuccess: () => void) => void;
+}) {
+  // 훅(useRouter)은 그것을 쓰는 컴포넌트 안에서 호출한다. 삭제 후 이동이 여기서 일어나므로 이 컴포넌트에 둔다.
   const router = useRouter();
-
-  // 글 삭제: DELETE /api/v1/posts/{id}
-  // 본문(body)이 없는 요청이므로 method 만 넘긴다. (apiFetch 는 body 가 없으면 Content-Type 을 붙이지 않는다)
-  const deletePost = (id: number) => {
-    apiFetch(`/api/v1/posts/${id}`, {
-      method: "DELETE",
-    }).then((data) => {
-      alert(data.msg); // "1번 글이 삭제되었습니다."
-
-      // 삭제된 글의 상세페이지는 더 이상 의미가 없으므로 목록으로 이동한다.
-      // replace : 방문 기록에서 지금 페이지를 교체 → 뒤로가기로 삭제된 글 페이지에 다시 오지 않는다.
-      router.replace("/posts");
-    });
-  };
 
   return (
     <>
@@ -81,9 +89,18 @@ function PostInfo({ post }: { post: PostWithContentDto }) {
         {/* confirm(...) : 확인/취소 창을 띄우고, 확인이면 true, 취소면 false 를 돌려준다.
             A && B : A 가 true 일 때만 B 를 실행한다(단락 평가). → 확인을 눌렀을 때만 삭제한다.
             실수로 버튼을 눌러도 바로 지워지지 않게 하는 안전장치. */}
+        {/* deletePost 의 두 번째 인자 = 삭제 성공 후 실행할 함수(onSuccess).
+            삭제된 글의 상세페이지는 더 이상 의미가 없으므로 목록으로 이동한다.
+            replace : 방문 기록에서 지금 페이지를 교체 → 뒤로가기로 삭제된 글 페이지에 다시 오지 않는다.
+            (onSuccess 가 응답 data 를 쓰지 않으므로, 이전에 띄우던 "1번 글이 삭제되었습니다." alert 는 이제 없다) */}
         <button
           className="p-2 rounded border cursor-pointer"
-          onClick={() => confirm(`${post.id}번 글을 정말로 삭제하시겠습니까?`) && deletePost(post.id)}
+          onClick={() =>
+            confirm(`${post.id}번 글을 정말로 삭제하시겠습니까?`) &&
+            deletePost(post.id, () => {
+              router.replace("/posts");
+            })
+          }
         >
           삭제
         </button>
@@ -256,7 +273,8 @@ export default function Page() {
 
   // 글 상태와 글 조회 로직은 usePost 커스텀 훅으로 옮겼다. (038-1)
   // 훅이 돌려준 객체에서 post 만 꺼내 쓴다. Page 입장에서는 "글을 어떻게 불러오는지" 몰라도 된다.
-  const { post } = usePost(id);
+  // 038-2 : 글 삭제 함수(deletePost)도 usePost 가 돌려준다.
+  const { post, deletePost } = usePost(id);
 
   // 댓글 목록 상태. 초기값이 null 이다. (왜 [] 가 아니라 null 인지는 31강에서)
   //   null : 아직 불러오는 중
@@ -286,7 +304,7 @@ export default function Page() {
 
       {/* 글 내용 + 삭제/수정 버튼은 PostInfo 컴포넌트로 분리했다. (037-2)
           가드 클로즈 덕분에 여기서 post 는 null 이 아니므로, PostWithContentDto 타입 그대로 넘길 수 있다. */}
-      <PostInfo post={post} />
+      <PostInfo post={post} deletePost={deletePost} />
 
       {/* hr : 구분선, my-2 : 위아래 바깥 여백 */}
       <hr className="my-2" />
