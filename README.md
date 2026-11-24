@@ -87,6 +87,7 @@ pnpm dev                     # http://localhost:3000
 - [044-2 PostCommentList 컴포넌트 도입](#044-2-postcommentlist-컴포넌트-도입)
 - [045 컴포넌트 구조화와 리팩토링은 필수가 아니다 (코드 변경 없음)](#045-컴포넌트-구조화와-리팩토링은-필수가-아니다-코드-변경-없음)
 - [046-1 클로저로 usePostComments의 id 기억, 하위 컴포넌트에 id 안 넘기기](#046-1-클로저로-usepostcomments의-id-기억-하위-컴포넌트에-id-안-넘기기)
+- [046-2 id가 필요하면 usePostComments가 제공](#046-2-id가-필요하면-usepostcomments가-제공)
 
 ---
 
@@ -2408,11 +2409,11 @@ function PostCommentWriteAndList({ id, postCommentsState }: { ... }) {
 ### 핵심 내용
 
 - 37~44강에서 컴포넌트를 나누고, 커스텀 훅을 만들고, `ReturnType` 으로 타입을 정리했다. 하지만 **이런 구조화는 필수가 아니다.**
-- 034-2 처럼 `Page` 하나에 모든 코드를 둬도 기능은 똑같이 동작한다. 실제로 이 리포의 태그 `034-2` 와 `044-2` 는 화면과 동작이 같다.
+- 036-3 처럼 `Page` 하나에 모든 코드를 둬도 기능은 거의 똑같이 동작한다. 태그 `036-3`(구조화 전)과 `044-2`(구조화 후)의 차이는 038-2 에서 글 삭제 성공 alert 가 빠진 것과 로딩 표시 위치 정도다.
 - 프론트엔드는 화면이 자주 바뀌고, 정답 구조도 사람마다 다르다. 처음부터 잘게 나누려고 애쓰기보다 **본인이 이해하고 고치기 쉬운 방식**으로 작성해도 된다.
 - 리팩토링은 코드가 실제로 읽기 어려워졌을 때, 같은 코드를 여러 곳에서 반복하게 됐을 때 하면 된다.
-- 복습 팁: GitHub 에서 `compare/034-2...044-2` 를 열면 같은 기능이 어떻게 구조화됐는지 한 번에 비교할 수 있다.
-  - https://github.com/zoek1211/nextjs-board-front/compare/034-2...044-2
+- 복습 팁: GitHub 에서 `compare/036-3...044-2` 를 열면 같은 기능이 어떻게 구조화됐는지 한 번에 비교할 수 있다.
+  - https://github.com/zoek1211/nextjs-board-front/compare/036-3...044-2
 
 ---
 
@@ -2482,4 +2483,44 @@ _deleteComment(commentId, (data) => { ... });
 
 // Page
 <PostCommentWriteAndList postCommentsState={postCommentsState} />
+```
+
+---
+
+## 046-2 id가 필요하면 usePostComments가 제공
+
+- 변경 내용: [commit/046-2](https://github.com/zoek1211/nextjs-board-front/commit/046-2) · 전체 코드: [tree/046-2](https://github.com/zoek1211/nextjs-board-front/tree/046-2)
+- 강의: 46강 (2단계: id 가 필요하면 usePostComments 가 그것을 제공하면 된다)
+
+### 핵심 내용
+
+- 046-1 에서 하위 컴포넌트의 `id` props 를 없앴다. 그런데 하위 컴포넌트가 **글 번호를 화면에 보여 주고 싶다면?**
+- 다시 props 로 받지 않는다. `id` 를 알고 있는 **훅이 결과 객체에 `id` 를 담아 제공**하면 된다: `return { id, postComments, deleteComment, writeComment }`
+- 하위 컴포넌트는 훅 결과에서 꺼내 쓴다: `const { id, writeComment } = postCommentsState;`
+- 42강의 `ReturnType<typeof usePostComments>` 덕분에, 훅의 반환값에 `id` 를 추가해도 props 타입은 고칠 필요가 없다.
+- 브라우저에서 확인한 결과(2번 글): 제목이 "2번글에 대한 댓글 작성", "2번 글에 대한 댓글 목록" 으로 보인다. 댓글 작성/삭제 정상.
+- (이 커밋에서 045 README 섹션의 비교 태그를 `036-3...044-2` 로 바로잡았다. 034-2 와 044-2 사이에는 35~36강의 기능 변경이 끼어 있기 때문이다.)
+
+### 코드 발췌
+
+`src/app/posts/[id]/page.tsx`
+
+```tsx
+function usePostComments(id: number) {
+  // ...
+  return {
+    id,
+    postComments,
+    deleteComment,
+    writeComment,
+  };
+}
+
+// PostCommentWrite
+const { id, writeComment } = postCommentsState;
+<h2>{id}번글에 대한 댓글 작성</h2>
+
+// PostCommentList
+const { id, postComments, deleteComment: _deleteComment } = postCommentsState;
+<h2>{id}번 글에 대한 댓글 목록</h2>
 ```

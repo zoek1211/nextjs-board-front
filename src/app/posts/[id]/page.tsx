@@ -135,7 +135,10 @@ function usePostComments(id: number) {
 
   // setPostComments 는 밖으로 내보내지 않는다.
   // → 댓글 목록은 이 훅이 제공하는 함수(deleteComment, writeComment)로만 바뀐다. 상태를 바꾸는 길이 한곳으로 모인다.
+  // 046-2 : id 도 함께 돌려준다. 하위 컴포넌트가 글 번호를 화면에 보여 주고 싶으면 여기서 꺼내면 된다.
+  //         id 가 필요하다고 props 로 따로 받는 대신, id 를 알고 있는 훅이 제공한다.
   return {
+    id,
     postComments,
     deleteComment,
     writeComment,
@@ -217,13 +220,13 @@ function PostInfo({ postState }: { postState: ReturnType<typeof usePost> }) {
 // 댓글 작성 폼만 담당하는 컴포넌트 (044-1)
 // PostCommentWriteAndList 가 "작성 폼 + 목록"을 모두 갖고 있어서, 작성 폼을 다시 떼어 냈다.
 // props 타입은 42강의 ReturnType 덕분에 한 줄로 끝난다. (하드코딩했다면 긴 타입을 또 복사해야 했다)
-// 필요한 것은 writeComment 하나뿐이므로 그것만 꺼낸다.
+// 필요한 것만 꺼낸다. (044-1 에서는 writeComment 하나, 046-2 부터 제목에 쓸 id 도)
 function PostCommentWrite({
   postCommentsState,
 }: {
   postCommentsState: ReturnType<typeof usePostComments>;
 }) {
-  const { writeComment } = postCommentsState;
+  const { id, writeComment } = postCommentsState;
 
   // 댓글 작성 폼 제출 처리. 글쓰기 폼(22~25강)과 같은 패턴이다.
   const handleCommentWriteFormSubmit = (
@@ -266,7 +269,8 @@ function PostCommentWrite({
 
   return (
     <>
-      <h2>댓글 작성</h2>
+      {/* 046-2 : 훅이 제공한 id 로 몇 번 글의 댓글인지 보여 준다. */}
+      <h2>{id}번글에 대한 댓글 작성</h2>
 
       {/* flex gap-2 : 입력칸과 작성 버튼을 가로로 나란히 */}
       <form className="flex gap-2" onSubmit={handleCommentWriteFormSubmit}>
@@ -297,7 +301,8 @@ function PostCommentList({
 }) {
   // deleteComment 는 _deleteComment 로 이름을 바꿔 받고, 아래에서 같은 이름의 함수를 새로 만든다. (043, PostInfo 와 같은 방식)
   // writeComment 는 PostCommentWrite 가 쓰므로 여기서는 꺼내지 않는다. (044-1)
-  const { postComments, deleteComment: _deleteComment } = postCommentsState;
+  // 046-2 : 제목에 글 번호를 보여 주기 위해 id 도 꺼낸다. (props 가 아니라 훅 결과에서)
+  const { id, postComments, deleteComment: _deleteComment } = postCommentsState;
 
   // 하위 컴포넌트에서 재정의한 deleteComment (043)
   // JSX 의 onClick 에 있던 confirm + 삭제 호출 + 성공 후 alert 를 JSX 밖으로 옮겼다.
@@ -320,7 +325,7 @@ function PostCommentList({
 
   return (
     <>
-      <h2>댓글 목록</h2>
+      <h2>{id}번 글에 대한 댓글 목록</h2>
 
       {/* 상태가 3가지라서 3갈래로 나눠 그렸었다. (1) null → 로딩중 (2) 빈 배열 → 없음 (3) 원소 있음 → 목록
           1) 은 위의 가드 클로즈가 처리하므로 JSX 에서는 2), 3) 만 남았다. (044-2) */}
