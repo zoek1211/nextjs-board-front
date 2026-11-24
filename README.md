@@ -5,6 +5,7 @@
 - 백엔드: [jhs512/p-14172-2 (tag 068)](https://github.com/jhs512/p-14172-2/tree/068)
 - 강의 정답 리포: [jhs512/p-14175-3](https://github.com/jhs512/p-14175-3)
 - 스펙 문서: [docs/SPEC.md](docs/SPEC.md)
+- 📘 **1~51강 쉽게 다시 보기: [docs/STUDY-GUIDE.md](docs/STUDY-GUIDE.md)** (전체 흐름, useState/useEffect, 에러 처리, 리팩토링, 댓글 수정)
 
 커밋마다 같은 이름의 태그가 달려 있습니다. 주소의 태그만 바꾸면 해당 강의 시점으로 이동합니다.
 
