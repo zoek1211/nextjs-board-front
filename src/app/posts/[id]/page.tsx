@@ -310,9 +310,20 @@ function PostCommentListItem({
   comment: PostCommentDto;
   postCommentsState: ReturnType<typeof usePostComments>;
 }) {
+  // 수정 모드 상태 (049-1)
+  //   false : 댓글 내용을 보여 준다 (보기 모드)
+  //   true  : 댓글 내용을 숨긴다. (049-2 에서 그 자리에 수정 폼을 보여 준다)
+  // 댓글마다 따로 켜고 꺼야 하므로, 댓글 하나를 담당하는 이 컴포넌트에 상태를 둔다. (48강에서 분리해 둔 덕분)
+  // map 으로 그려진 PostCommentListItem 하나하나가 각자 자기만의 modifyMode 를 갖는다.
+  const [modifyMode, setModifyMode] = useState(false);
   // deleteComment 는 _deleteComment 로 이름을 바꿔 받고, 아래에서 같은 이름의 함수를 새로 만든다. (043, PostInfo 와 같은 방식)
   // 이 컴포넌트에 필요한 것은 삭제 함수뿐이다. (048)
   const { deleteComment: _deleteComment } = postCommentsState;
+
+  // 수정 버튼을 누를 때마다 수정 모드를 켜고 끈다(토글). !modifyMode : true ↔ false 뒤집기
+  const toggleModifyMode = () => {
+    setModifyMode(!modifyMode);
+  };
 
   // 하위 컴포넌트에서 재정의한 deleteComment (043)
   // JSX 의 onClick 에 있던 confirm + 삭제 호출 + 성공 후 alert 를 JSX 밖으로 옮겼다.
@@ -329,15 +340,21 @@ function PostCommentListItem({
   };
 
   return (
-    // py-2 : 위아래 안쪽 여백
     // key 는 여기가 아니라 map 을 도는 쪽(PostCommentList)에서 <PostCommentListItem key=... /> 로 준다.
-    <li className="py-2">
-      {comment.content}
-      {/* ml-2 : 왼쪽 바깥 여백(댓글 내용과 간격)
-          댓글마다 번호가 다르므로 여기서는 화살표 함수로 감싸서 comment.id 를 넘긴다.
+    // 049-1 : flex gap-2 items-center : 번호, 내용, 버튼들을 가로로 나란히, 세로 가운데 정렬
+    //         (간격을 gap 으로 주므로 이전의 py-2, 버튼의 ml-2 는 뺐다)
+    <li className="flex gap-2 items-center">
+      <span>{comment.id} :</span>
+      {/* 수정 모드가 아닐 때만 댓글 내용을 보여 준다. */}
+      {!modifyMode && <span>{comment.content}</span>}
+      {/* onClick={toggleModifyMode} : 인자가 필요 없으므로 함수 자체를 넘긴다. */}
+      <button className="p-2 rounded border" onClick={toggleModifyMode}>
+        수정
+      </button>
+      {/* 댓글마다 번호가 다르므로 여기서는 화살표 함수로 감싸서 comment.id 를 넘긴다.
           (043 이전에는 confirm, 삭제 호출, alert 가 모두 이 onClick 안에 있었다) */}
       <button
-        className="ml-2 p-2 rounded border"
+        className="p-2 rounded border"
         onClick={() => deleteComment(comment.id)}
       >
         삭제
@@ -376,7 +393,8 @@ function PostCommentList({
 
       {/* 3) 원소가 있는 배열 → 목록 출력 */}
       {postComments != null && postComments.length > 0 && (
-        <ul>
+        // mt-2 : 위쪽 바깥 여백, flex flex-col gap-2 : 댓글들을 세로로 쌓고 사이 간격 (049-1)
+        <ul className="mt-2 flex flex-col gap-2">
           {postComments.map((comment) => (
             // map 으로 만든 최상위 엘리먼트에는 고유한 key 가 필요하다.
             // 컴포넌트로 분리해도 마찬가지다. key 는 리액트가 쓰는 특별한 속성이라 props 로 전달되지 않는다.

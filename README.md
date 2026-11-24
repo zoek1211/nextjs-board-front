@@ -1,6 +1,6 @@
 # nextjs-board-front
 
-슬로그 강의 **[스프링부트, Next.js REST API 연동](https://www.slog.gg/p/14175)** 1~48강을 따라 만든 Next.js + TypeScript 게시판 프론트엔드입니다.
+슬로그 강의 **[스프링부트, Next.js REST API 연동](https://www.slog.gg/p/14175)** 1~49강을 따라 만든 Next.js + TypeScript 게시판 프론트엔드입니다.
 
 - 백엔드: [jhs512/p-14172-2 (tag 068)](https://github.com/jhs512/p-14172-2/tree/068)
 - 강의 정답 리포: [jhs512/p-14175-3](https://github.com/jhs512/p-14175-3)
@@ -90,6 +90,7 @@ pnpm dev                     # http://localhost:3000
 - [046-2 id가 필요하면 usePostComments가 제공](#046-2-id가-필요하면-usepostcomments가-제공)
 - [047 id 대신 postId로 이름을 명확하게](#047-id-대신-postid로-이름을-명확하게)
 - [048 PostCommentListItem 컴포넌트 분리](#048-postcommentlistitem-컴포넌트-분리)
+- [049-1 modifyMode 상태로 댓글 내용 보이기 숨기기](#049-1-modifymode-상태로-댓글-내용-보이기-숨기기)
 
 ---
 
@@ -2634,4 +2635,54 @@ function PostCommentListItem({
     postCommentsState={postCommentsState}
   />
 ))}
+```
+
+---
+
+## 049-1 modifyMode 상태로 댓글 내용 보이기 숨기기
+
+- 변경 내용: [commit/049-1](https://github.com/zoek1211/nextjs-board-front/commit/049-1) · 전체 코드: [tree/049-1](https://github.com/zoek1211/nextjs-board-front/tree/049-1)
+- 강의: 49강, 수정 토글 버튼에 따라서 댓글 내용과 댓글 수정 폼이 스위칭되도록 (1단계: modifyMode 상태로 댓글 내용 보이기/숨기기)
+
+### 핵심 내용
+
+- 댓글 수정의 첫 단계: 댓글마다 **수정 모드**(`modifyMode`) 상태를 둔다.
+  - `false`: 댓글 내용을 보여 준다.
+  - `true`: 댓글 내용을 숨긴다. (049-2 에서 그 자리에 수정 폼을 보여 준다)
+- 상태를 `PostCommentListItem` 안에 둔다. `map` 으로 그려진 컴포넌트 하나하나가 **각자 자기 상태**를 갖는다. 48강에서 댓글 하나를 컴포넌트로 분리해 둔 덕분이다.
+- `toggleModifyMode`: `setModifyMode(!modifyMode)` 로 true ↔ false 를 뒤집는다. 수정 버튼의 `onClick` 에 함수 자체를 넘긴다.
+- `{!modifyMode && <span>{comment.content}</span>}`: 수정 모드가 아닐 때만 내용을 그린다.
+- 화면 정리:
+  - 댓글 번호를 `<span>{comment.id} :</span>` 로 보여 준다.
+  - `li` 는 `flex gap-2 items-center` 로 가로 배치, `ul` 은 `mt-2 flex flex-col gap-2` 로 세로 간격
+- 브라우저에서 확인한 결과(1번 글, 댓글 1번과 6번): 6번 댓글의 수정 버튼을 누르면 6번의 내용만 사라지고 1번은 그대로다. 다시 누르면 다시 보인다.
+
+### 코드 발췌
+
+`src/app/posts/[id]/page.tsx`
+
+```tsx
+function PostCommentListItem({ comment, postCommentsState }: { ... }) {
+  const [modifyMode, setModifyMode] = useState(false);
+  const { deleteComment: _deleteComment } = postCommentsState;
+
+  const toggleModifyMode = () => {
+    setModifyMode(!modifyMode);
+  };
+
+  // ...
+
+  return (
+    <li className="flex gap-2 items-center">
+      <span>{comment.id} :</span>
+      {!modifyMode && <span>{comment.content}</span>}
+      <button className="p-2 rounded border" onClick={toggleModifyMode}>
+        수정
+      </button>
+      <button className="p-2 rounded border" onClick={() => deleteComment(comment.id)}>
+        삭제
+      </button>
+    </li>
+  );
+}
 ```
