@@ -12,7 +12,7 @@
 - 변경 내용(diff): `https://github.com/zoek1211/nextjs-board-front/commit/<태그>`
 - 그 시점의 전체 코드: `https://github.com/zoek1211/nextjs-board-front/tree/<태그>`
 
-## 구현할 기능 (강의 순서)
+## 구현한 기능 (강의 순서)
 
 | # | 기능 | 등장 태그 | 화면/파일 |
 |---|---|---|---|
