@@ -137,8 +137,23 @@ function usePostComments(postId: number) {
     });
   };
 
+  // 댓글 수정 API: PUT /api/v1/posts/{글번호}/comments/{댓글번호} (050-1)
+  // 글 수정(29강)과 마찬가지로 PUT 으로 바꿀 내용을 보낸다. 본문은 { "content": "..." }
+  // 글 번호(postId)는 deleteComment, writeComment 처럼 클로저로 기억하는 값을 쓴다.
+  // 050-1 : 아직 postComments 상태를 바꾸지 않는다. 서버에서만 수정되고, 화면의 기존 댓글 내용은 그대로다. (050-2 에서 해결)
+  const modifyComment = (
+    commentId: number,
+    content: string,
+    onSuccess: (data: { msg: string }) => void
+  ) => {
+    apiFetch(`/api/v1/posts/${postId}/comments/${commentId}`, {
+      method: "PUT",
+      body: JSON.stringify({ content }),
+    }).then(onSuccess);
+  };
+
   // setPostComments 는 밖으로 내보내지 않는다.
-  // → 댓글 목록은 이 훅이 제공하는 함수(deleteComment, writeComment)로만 바뀐다. 상태를 바꾸는 길이 한곳으로 모인다.
+  // → 댓글 목록은 이 훅이 제공하는 함수(deleteComment, writeComment, modifyComment)로만 바뀐다. 상태를 바꾸는 길이 한곳으로 모인다.
   // 046-2 : 글 번호도 함께 돌려준다. 하위 컴포넌트가 글 번호를 화면에 보여 주고 싶으면 여기서 꺼내면 된다.
   //         글 번호가 필요하다고 props 로 따로 받는 대신, 그것을 알고 있는 훅이 제공한다.
   // 047 : 이름이 id 이면 "글 번호인지 댓글 번호인지" 헷갈린다. postId 로 바꿔서 글 번호라는 것을 분명히 했다.
@@ -147,6 +162,7 @@ function usePostComments(postId: number) {
     postComments,
     deleteComment,
     writeComment,
+    modifyComment,
   };
 }
 
@@ -317,8 +333,8 @@ function PostCommentListItem({
   // map 으로 그려진 PostCommentListItem 하나하나가 각자 자기만의 modifyMode 를 갖는다.
   const [modifyMode, setModifyMode] = useState(false);
   // deleteComment 는 _deleteComment 로 이름을 바꿔 받고, 아래에서 같은 이름의 함수를 새로 만든다. (043, PostInfo 와 같은 방식)
-  // 이 컴포넌트에 필요한 것은 삭제 함수뿐이다. (048)
-  const { deleteComment: _deleteComment } = postCommentsState;
+  // 이 컴포넌트에 필요한 것은 삭제 함수(048)와 수정 함수(050-1)다.
+  const { deleteComment: _deleteComment, modifyComment } = postCommentsState;
 
   // 수정 버튼을 누를 때마다 수정 모드를 켜고 끈다(토글). !modifyMode : true ↔ false 뒤집기
   const toggleModifyMode = () => {
@@ -339,6 +355,40 @@ function PostCommentListItem({
     });
   };
 
+  // 댓글 수정 폼 제출 처리 (050-1)
+  // 댓글 작성 폼(PostCommentWrite)과 같은 패턴: 기본 제출 막기 → 입력값 꺼내기 → 유효성 체크 → API 호출
+  const handleSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
+    e.preventDefault(); // 폼 기본 제출(페이지 새로고침) 막기
+
+    const form = e.currentTarget;
+
+    const contentTextarea = form.elements.namedItem(
+      "content"
+    ) as HTMLTextAreaElement;
+
+    // 유효성 체크: 공백만 입력한 경우도 빈 값으로 처리, 2자 이상 (백엔드 댓글 규칙과 맞춘다)
+    contentTextarea.value = contentTextarea.value.trim();
+
+    if (contentTextarea.value.length === 0) {
+      alert("댓글 내용을 입력해주세요.");
+      contentTextarea.focus();
+      return;
+    }
+
+    if (contentTextarea.value.length < 2) {
+      alert("댓글 내용을 2자 이상 입력해주세요.");
+      contentTextarea.focus();
+      return;
+    }
+
+    // 수정 성공 후: 결과 메시지를 보여 주고, 수정 모드를 끈다(보기 모드로 돌아감).
+    // comment.id : 이 컴포넌트가 그리고 있는 댓글의 번호
+    modifyComment(comment.id, contentTextarea.value, (data) => {
+      alert(data.msg);
+      toggleModifyMode();
+    });
+  };
+
   return (
     // key 는 여기가 아니라 map 을 도는 쪽(PostCommentList)에서 <PostCommentListItem key=... /> 로 준다.
     // 049-1 : flex gap-2 items-center : 번호, 내용, 버튼들을 가로로 나란히, 세로 가운데 정렬
@@ -348,13 +398,10 @@ function PostCommentListItem({
       {/* 수정 모드가 아닐 때만 댓글 내용을 보여 준다. */}
       {!modifyMode && <span>{comment.content}</span>}
       {/* 수정 모드일 때만 댓글 수정 폼을 보여 준다. (049-2) → 내용과 수정 폼이 서로 자리를 바꾼다(스위칭).
-          onSubmit={(e) => e.preventDefault()} : 일단 폼 기본 제출(페이지 새로고침)만 막아 둔다.
-            아직 수정 API 를 호출하지 않으므로, 수정 버튼을 눌러도 아무 일도 일어나지 않는다. (50강에서 구현) */}
+          049-2 에서는 onSubmit={(e) => e.preventDefault()} 로 제출만 막아 뒀다.
+          050-1 부터 handleSubmit 이 유효성 체크 후 수정 API 를 호출한다. */}
       {modifyMode && (
-        <form
-          className="flex gap-2 items-center"
-          onSubmit={(e) => e.preventDefault()}
-        >
+        <form className="flex gap-2 items-center" onSubmit={handleSubmit}>
           {/* defaultValue={comment.content} : 입력칸에 기존 댓글 내용을 미리 채워 둔다. (28강 글 수정 폼과 같은 방식)
               value 가 아니라 defaultValue 이므로, 처음 값만 넣어 주고 이후 입력은 브라우저가 관리한다. */}
           <textarea
@@ -364,6 +411,8 @@ function PostCommentListItem({
             maxLength={100}
             rows={5}
             defaultValue={comment.content}
+            // autoFocus : 수정 폼이 나타나자마자 입력칸에 커서를 둔다. 수정 버튼을 누른 뒤 바로 타이핑할 수 있다.
+            autoFocus
           />
           <button className="p-2 rounded border" type="submit">
             수정

@@ -1,6 +1,6 @@
 # nextjs-board-front
 
-슬로그 강의 **[스프링부트, Next.js REST API 연동](https://www.slog.gg/p/14175)** 1~49강을 따라 만든 Next.js + TypeScript 게시판 프론트엔드입니다.
+슬로그 강의 **[스프링부트, Next.js REST API 연동](https://www.slog.gg/p/14175)** 1~50강을 따라 만든 Next.js + TypeScript 게시판 프론트엔드입니다.
 
 - 백엔드: [jhs512/p-14172-2 (tag 068)](https://github.com/jhs512/p-14172-2/tree/068)
 - 강의 정답 리포: [jhs512/p-14175-3](https://github.com/jhs512/p-14175-3)
@@ -92,6 +92,7 @@ pnpm dev                     # http://localhost:3000
 - [048 PostCommentListItem 컴포넌트 분리](#048-postcommentlistitem-컴포넌트-분리)
 - [049-1 modifyMode 상태로 댓글 내용 보이기 숨기기](#049-1-modifymode-상태로-댓글-내용-보이기-숨기기)
 - [049-2 수정 모드에서 댓글 수정 폼 표시, submit은 일단 막기](#049-2-수정-모드에서-댓글-수정-폼-표시-submit은-일단-막기)
+- [050-1 댓글 수정 폼 체크 후 수정 API 호출](#050-1-댓글-수정-폼-체크-후-수정-api-호출)
 
 ---
 
@@ -2735,4 +2736,63 @@ function PostCommentListItem({ comment, postCommentsState }: { ... }) {
   </button>
   {/* 삭제 버튼 */}
 </li>
+```
+
+---
+
+## 050-1 댓글 수정 폼 체크 후 수정 API 호출
+
+- 변경 내용: [commit/050-1](https://github.com/zoek1211/nextjs-board-front/commit/050-1) · 전체 코드: [tree/050-1](https://github.com/zoek1211/nextjs-board-front/tree/050-1)
+- 강의: 50강, 댓글 수정 폼에서 submit 이벤트가 발생하면 폼 체크 후 수정 API 호출 (1단계)
+
+### 핵심 내용
+
+- **훅에 `modifyComment(commentId, content, onSuccess)` 추가**
+  - 댓글 수정 API: `PUT /api/v1/posts/{postId}/comments/{commentId}`, 본문 `{ "content": "..." }` (29강 글 수정과 같은 PUT)
+  - 글 번호(`postId`)는 다른 함수들처럼 클로저로 기억한다.
+  - 반환 객체에 `modifyComment` 를 추가했다. 42강 `ReturnType` 덕분에 props 타입은 고칠 필요가 없다.
+- **`PostCommentListItem` 에 `handleSubmit` 추가.** 댓글 작성 폼과 같은 패턴이다.
+  - `e.preventDefault()` → textarea 값 꺼내기 → `trim()` + 빈 값 체크 + 2자 이상 체크
+  - → `modifyComment(comment.id, 내용, (data) => { alert(data.msg); toggleModifyMode(); })`
+  - 성공하면 메시지를 보여 주고 수정 모드를 끈다.
+- 수정 textarea 에 **`autoFocus`**: 수정 폼이 나타나자마자 커서가 들어가 바로 타이핑할 수 있다.
+- **아직 남은 문제**: `modifyComment` 는 `postComments` 상태를 바꾸지 않는다. 서버에서는 수정되지만 화면에는 기존 내용이 그대로 보인다(새로고침하면 보인다). → 050-2 에서 해결
+- 브라우저에서 확인한 결과(1번 글의 6번 댓글):
+  - 수정 버튼 → 입력칸에 바로 포커스
+  - `a` → "댓글 내용을 2자 이상 입력해주세요.", 공백만 → "댓글 내용을 입력해주세요."
+  - `050-1 두번째 수정` 으로 제출 → "6번 댓글이 수정되었습니다." → 보기 모드로 돌아가지만 화면은 이전 내용 `050-1 수정 테스트`, API 로 조회하면 `050-1 두번째 수정`
+
+### 코드 발췌
+
+`src/app/posts/[id]/page.tsx`
+
+```tsx
+// usePostComments
+const modifyComment = (
+  commentId: number,
+  content: string,
+  onSuccess: (data: { msg: string }) => void
+) => {
+  apiFetch(`/api/v1/posts/${postId}/comments/${commentId}`, {
+    method: "PUT",
+    body: JSON.stringify({ content }),
+  }).then(onSuccess);
+};
+
+// PostCommentListItem
+const { deleteComment: _deleteComment, modifyComment } = postCommentsState;
+
+const handleSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
+  e.preventDefault();
+  // ... textarea 값 꺼내기, 유효성 체크
+  modifyComment(comment.id, contentTextarea.value, (data) => {
+    alert(data.msg);
+    toggleModifyMode();
+  });
+};
+
+<form className="flex gap-2 items-center" onSubmit={handleSubmit}>
+  <textarea ... defaultValue={comment.content} autoFocus />
+  <button className="p-2 rounded border" type="submit">수정</button>
+</form>
 ```
