@@ -1,6 +1,6 @@
 # nextjs-board-front
 
-슬로그 강의 **[스프링부트, Next.js REST API 연동](https://www.slog.gg/p/14175)** 1~39강을 따라 만든 Next.js + TypeScript 게시판 프론트엔드입니다.
+슬로그 강의 **[스프링부트, Next.js REST API 연동](https://www.slog.gg/p/14175)** 1~40강을 따라 만든 Next.js + TypeScript 게시판 프론트엔드입니다.
 
 - 백엔드: [jhs512/p-14172-2 (tag 068)](https://github.com/jhs512/p-14172-2/tree/068)
 - 강의 정답 리포: [jhs512/p-14175-3](https://github.com/jhs512/p-14175-3)
@@ -79,6 +79,7 @@ pnpm dev                     # http://localhost:3000
 - [038-1 usePost 커스텀 훅 도입](#038-1-usepost-커스텀-훅-도입)
 - [038-2 글 삭제 로직을 usePost 훅으로 이동](#038-2-글-삭제-로직을-usepost-훅으로-이동)
 - [039 usePostComments 커스텀 훅 도입](#039-usepostcomments-커스텀-훅-도입)
+- [040 path 파라미터는 항상 문자열, 구조분해할당에서 변수 이름 바꾸기](#040-path-파라미터는-항상-문자열-구조분해할당에서-변수-이름-바꾸기)
 
 ---
 
@@ -2084,4 +2085,33 @@ writeComment(id, contentTextarea.value, (data) => {
 
 // Page
 const { postComments, deleteComment, writeComment } = usePostComments(id);
+```
+
+---
+
+## 040 path 파라미터는 항상 문자열, 구조분해할당에서 변수 이름 바꾸기
+
+- 변경 내용: [commit/040](https://github.com/zoek1211/nextjs-board-front/commit/040) · 전체 코드: [tree/040](https://github.com/zoek1211/nextjs-board-front/tree/040)
+- 강의: 40강, path 파라미터 값을 가져올 때 string 으로만 가져올 수 있다
+- 정답 리포의 `040` 은 파일 변경이 없는 커밋이다(설명 강의). 이 리포에서는 로직은 그대로 두고 주석과 README 만 추가했다.
+
+### 핵심 내용
+
+- **path 파라미터는 항상 문자열이다.** URL(`/posts/3`)은 문자열이므로 `useParams()` 로 꺼낸 `id` 도 `"3"` 이다.
+- `useParams<{ id: number }>()` 처럼 타입 인자를 숫자로 적어도 값이 숫자로 바뀌지 않는다. 타입 인자는 TypeScript 에게 알려 주는 정보일 뿐이다. 그렇게 쓰면 타입과 실제 값이 어긋나서 오히려 버그를 숨긴다.
+- 그래서 문자열로 받고, 숫자가 필요하면 직접 `Number()` 로 변환한다(16강부터 이미 이렇게 쓰고 있다).
+- **구조분해할당에서 변수 이름 바꾸기**: `{ 속성이름: 새변수이름 }`
+  - `const { id: idStr } = useParams<{ id: string }>();` → `params.id` 값이 `idStr` 이라는 변수에 들어간다.
+  - 강의 예시: `const { id: postId } = params;` → `params.id` 값이 `postId` 에 들어간다.
+  - 같은 이름의 변수(`id`)를 숫자 버전으로 다시 만들고 싶을 때, 문자열 버전에 다른 이름을 붙여 충돌을 피할 수 있다.
+
+### 코드 발췌
+
+`src/app/posts/[id]/page.tsx` (16강부터 있던 코드)
+
+```tsx
+// params.id 를 idStr 이라는 이름으로 받는다 (값은 항상 문자열)
+const { id: idStr } = useParams<{ id: string }>();
+// 숫자가 필요하므로 직접 변환
+const id = Number(idStr);
 ```

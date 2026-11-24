@@ -331,6 +331,8 @@ export default function Page() {
   // /posts/3 으로 접속하면 { id: "3" } 을 돌려준다. 폴더 이름 [id] 가 키 이름이 된다.
   // URL 은 문자열이므로 path 파라미터 값의 타입은 항상 string 이다.
   // { id: idStr } : 구조분해할당하면서 이름을 idStr 로 바꿔 받는다. (문자열이라는 것을 이름으로 표시)
+  // (40강) useParams<{ id: number }> 처럼 타입을 바꿔 적어도 실제 값은 여전히 문자열이다.
+  //        타입 인자는 TypeScript 에게 알려 주는 정보일 뿐, 값을 변환해 주지 않는다. → 숫자가 필요하면 직접 Number() 로 바꾼다.
   const { id: idStr } = useParams<{ id: string }>();
   // 글 번호는 숫자로 다루는 것이 자연스러우므로 Number() 로 변환한다. "3" → 3
   const id = Number(idStr);
