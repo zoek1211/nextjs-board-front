@@ -1,6 +1,6 @@
 # nextjs-board-front
 
-슬로그 강의 **[스프링부트, Next.js REST API 연동](https://www.slog.gg/p/14175)** 1~50강을 따라 만든 Next.js + TypeScript 게시판 프론트엔드입니다.
+슬로그 강의 **[스프링부트, Next.js REST API 연동](https://www.slog.gg/p/14175)** 1~51강을 따라 만든 Next.js + TypeScript 게시판 프론트엔드입니다.
 
 - 백엔드: [jhs512/p-14172-2 (tag 068)](https://github.com/jhs512/p-14172-2/tree/068)
 - 강의 정답 리포: [jhs512/p-14175-3](https://github.com/jhs512/p-14175-3)
@@ -94,6 +94,7 @@ pnpm dev                     # http://localhost:3000
 - [049-2 수정 모드에서 댓글 수정 폼 표시, submit은 일단 막기](#049-2-수정-모드에서-댓글-수정-폼-표시-submit은-일단-막기)
 - [050-1 댓글 수정 폼 체크 후 수정 API 호출](#050-1-댓글-수정-폼-체크-후-수정-api-호출)
 - [050-2 수정 성공 시 렌더링된 댓글 내용 갱신](#050-2-수정-성공-시-렌더링된-댓글-내용-갱신)
+- [051 여러 줄 댓글 표시, 댓글 버튼 상단 정렬](#051-여러-줄-댓글-표시-댓글-버튼-상단-정렬)
 
 ---
 
@@ -2843,4 +2844,47 @@ const modifyComment = (
     onSuccess(data);
   });
 };
+```
+
+---
+
+## 051 여러 줄 댓글 표시, 댓글 버튼 상단 정렬
+
+- 변경 내용: [commit/051](https://github.com/zoek1211/nextjs-board-front/commit/051) · 전체 코드: [tree/051](https://github.com/zoek1211/nextjs-board-front/tree/051)
+- 강의: 51강, 댓글 본문이 여러 줄로 렌더링되도록, 댓글 관련 버튼의 정렬 방향을 상단으로 변경
+
+### 핵심 내용
+
+- **여러 줄 댓글**: `<span style={{ whiteSpace: "pre-line" }}>{comment.content}</span>`
+  - 글 본문(15강)과 같은 방식이다. 없으면 줄바꿈(`\n`)이 무시되어 한 줄로 이어 붙어 보인다.
+- **버튼을 위쪽에 맞추기**: 댓글 `li` 와 수정 폼의 `items-center` → **`items-start`**
+  - 내용이 여러 줄이거나 수정 폼(5줄 textarea)이 열리면, 가운데 정렬은 번호와 버튼이 아래로 내려가 어색하다. 위쪽에 맞추면 번호, 내용 첫 줄, 버튼이 같은 높이에서 시작한다.
+  - 댓글 작성 폼은 `items-center` 를 추가해서 작성 버튼을 입력칸의 세로 가운데에 맞췄다.
+- 수정 폼의 제출 버튼 글자 "수정" → **"저장"**. 옆의 토글 버튼("수정취소")과 헷갈리지 않는다.
+- 정답 리포의 `051` 에는 `docs/validation-2026-11-23.md` 도 들어 있지만, 정답 리포 자체의 검증 기록이라 이 리포에는 가져오지 않았다.
+- 브라우저에서 확인한 결과(1번 글의 6번 댓글): 수정 → "저장", "수정취소" 버튼 → 두 줄로 저장하면 "6번 댓글이 수정되었습니다." 후 화면에 두 줄로 보인다(높이 24px → 48px). `li` 의 `align-items` 는 `flex-start`.
+
+### 코드 발췌
+
+`src/app/posts/[id]/page.tsx` (PostCommentListItem)
+
+```tsx
+<li className="flex gap-2 items-start">
+  <span>{comment.id} :</span>
+  {!modifyMode && (
+    <span style={{ whiteSpace: "pre-line" }}>{comment.content}</span>
+  )}
+  {modifyMode && (
+    <form className="flex gap-2 items-start" onSubmit={handleSubmit}>
+      <textarea ... defaultValue={comment.content} autoFocus />
+      <button className="p-2 rounded border" type="submit">
+        저장
+      </button>
+    </form>
+  )}
+  <button className="p-2 rounded border" onClick={toggleModifyMode}>
+    {modifyMode ? "수정취소" : "수정"}
+  </button>
+  {/* 삭제 버튼 */}
+</li>
 ```

@@ -309,8 +309,12 @@ function PostCommentWrite({
       {/* 046-2 : 훅이 제공한 글 번호(047 부터 postId)로 몇 번 글의 댓글인지 보여 준다. */}
       <h2>{postId}번글에 대한 댓글 작성</h2>
 
-      {/* flex gap-2 : 입력칸과 작성 버튼을 가로로 나란히 */}
-      <form className="flex gap-2" onSubmit={handleCommentWriteFormSubmit}>
+      {/* flex gap-2 : 입력칸과 작성 버튼을 가로로 나란히
+          items-center : 작성 버튼을 (높이 5줄인) 입력칸의 세로 가운데에 맞춘다. (051) */}
+      <form
+        className="flex gap-2 items-center"
+        onSubmit={handleCommentWriteFormSubmit}
+      >
         {/* maxLength={100} : 100자 넘게는 입력 자체가 안 된다 (최대 길이는 입력 단계에서 막는다)
             rows={5} : 기본 높이 5줄 */}
         <textarea
@@ -407,17 +411,25 @@ function PostCommentListItem({
 
   return (
     // key 는 여기가 아니라 map 을 도는 쪽(PostCommentList)에서 <PostCommentListItem key=... /> 로 준다.
-    // 049-1 : flex gap-2 items-center : 번호, 내용, 버튼들을 가로로 나란히, 세로 가운데 정렬
+    // 049-1 : flex gap-2 : 번호, 내용, 버튼들을 가로로 나란히
     //         (간격을 gap 으로 주므로 이전의 py-2, 버튼의 ml-2 는 뺐다)
-    <li className="flex gap-2 items-center">
+    // 051   : items-center → items-start (세로 정렬을 위쪽으로)
+    //         댓글 내용이 여러 줄이거나 수정 폼(5줄)이 보일 때, 가운데 정렬이면 번호와 버튼이 아래로 내려가 어색하다.
+    //         위쪽에 맞추면 번호, 내용 첫 줄, 버튼이 같은 높이에서 시작한다.
+    <li className="flex gap-2 items-start">
       <span>{comment.id} :</span>
-      {/* 수정 모드가 아닐 때만 댓글 내용을 보여 준다. */}
-      {!modifyMode && <span>{comment.content}</span>}
+      {/* 수정 모드가 아닐 때만 댓글 내용을 보여 준다.
+          051 : whiteSpace: "pre-line" → 댓글 본문의 줄바꿈(\n)을 화면에서도 줄바꿈으로 보여 준다. (글 본문과 같은 방식)
+                없으면 여러 줄로 쓴 댓글이 한 줄로 이어 붙어 보인다. */}
+      {!modifyMode && (
+        <span style={{ whiteSpace: "pre-line" }}>{comment.content}</span>
+      )}
       {/* 수정 모드일 때만 댓글 수정 폼을 보여 준다. (049-2) → 내용과 수정 폼이 서로 자리를 바꾼다(스위칭).
           049-2 에서는 onSubmit={(e) => e.preventDefault()} 로 제출만 막아 뒀다.
           050-1 부터 handleSubmit 이 유효성 체크 후 수정 API 를 호출한다. */}
       {modifyMode && (
-        <form className="flex gap-2 items-center" onSubmit={handleSubmit}>
+        // 051 : 수정 폼 안에서도 버튼을 위쪽에 맞춘다. (items-start)
+        <form className="flex gap-2 items-start" onSubmit={handleSubmit}>
           {/* defaultValue={comment.content} : 입력칸에 기존 댓글 내용을 미리 채워 둔다. (28강 글 수정 폼과 같은 방식)
               value 가 아니라 defaultValue 이므로, 처음 값만 넣어 주고 이후 입력은 브라우저가 관리한다. */}
           <textarea
@@ -430,8 +442,9 @@ function PostCommentListItem({
             // autoFocus : 수정 폼이 나타나자마자 입력칸에 커서를 둔다. 수정 버튼을 누른 뒤 바로 타이핑할 수 있다.
             autoFocus
           />
+          {/* 051 : 제출 버튼 글자를 "수정" → "저장" 으로. 옆의 토글 버튼("수정취소")과 헷갈리지 않게 한다. */}
           <button className="p-2 rounded border" type="submit">
-            수정
+            저장
           </button>
         </form>
       )}
