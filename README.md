@@ -12,6 +12,23 @@
 - 변경 내용(diff): `https://github.com/zoek1211/nextjs-board-front/commit/<태그>`
 - 그 시점의 전체 코드: `https://github.com/zoek1211/nextjs-board-front/tree/<태그>`
 
+## 구현할 기능 (강의 순서)
+
+| # | 기능 | 등장 태그(정답 리포 기준) | 화면/파일 |
+|---|---|---|---|
+| 1 | 홈 | ~004 | `src/app/page.tsx` |
+| 2 | 글 다건조회 | ~013 | `src/app/posts/page.tsx` |
+| 3 | 글 단건조회 | ~019 | `src/app/posts/[id]/page.tsx` |
+| 4 | 글 작성 | ~022 | `src/app/posts/write/page.tsx` |
+| 5 | 글 삭제 | 026 | `src/app/posts/[id]/page.tsx` |
+| 6 | 글 수정 | 028 | `src/app/posts/[id]/edit/page.tsx` |
+| 7 | 댓글 다건조회 | 030 | `src/app/posts/[id]/page.tsx` |
+| 8 | 댓글 삭제 | 032 | `src/app/posts/[id]/page.tsx` |
+| 9 | 댓글 작성 | 034 | `src/app/posts/[id]/page.tsx` |
+| 10 | 폼 유효성 체크 세밀화, 프로미스 체인 예외 처리 (V2) | 035 ~ 036 | `write/page.tsx`, `[id]/page.tsx`, `lib/backend/client.ts` |
+| 11 | 상세페이지 리팩토링: 컴포넌트·커스텀 훅 분리, 클로저, `ReturnType` (V2) | 037 ~ 048 | `src/app/posts/[id]/page.tsx` |
+| 12 | 댓글 수정: 수정 토글, 수정 폼, 수정 API(PUT), UI 반영 (V2) | 049 ~ 051 | `src/app/posts/[id]/page.tsx` |
+
 ## 실행 방법
 
 ```bash
